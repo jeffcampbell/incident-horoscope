@@ -379,51 +379,112 @@ function generateFallbackPosition(bodyCode, date) {
 }
 
 async function storeEphemerisData(data, date, location) {
-    const query = `
-        INSERT INTO ephemeris_data (
-            date, location, sun_ra, sun_dec, sun_distance,
-            mercury_ra, mercury_dec, mercury_distance,
-            venus_ra, venus_dec, venus_distance,
-            mars_ra, mars_dec, mars_distance,
-            jupiter_ra, jupiter_dec, jupiter_distance,
-            saturn_ra, saturn_dec, saturn_distance,
-            uranus_ra, uranus_dec, uranus_distance,
-            neptune_ra, neptune_dec, neptune_distance,
-            moon_ra, moon_dec, moon_distance,
-            using_fallback_data, data_sources
-        ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-            $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
-        )
-        ON CONFLICT (date, location) DO UPDATE SET
-            sun_ra = EXCLUDED.sun_ra, sun_dec = EXCLUDED.sun_dec, sun_distance = EXCLUDED.sun_distance,
-            mercury_ra = EXCLUDED.mercury_ra, mercury_dec = EXCLUDED.mercury_dec, mercury_distance = EXCLUDED.mercury_distance,
-            venus_ra = EXCLUDED.venus_ra, venus_dec = EXCLUDED.venus_dec, venus_distance = EXCLUDED.venus_distance,
-            mars_ra = EXCLUDED.mars_ra, mars_dec = EXCLUDED.mars_dec, mars_distance = EXCLUDED.mars_distance,
-            jupiter_ra = EXCLUDED.jupiter_ra, jupiter_dec = EXCLUDED.jupiter_dec, jupiter_distance = EXCLUDED.jupiter_distance,
-            saturn_ra = EXCLUDED.saturn_ra, saturn_dec = EXCLUDED.saturn_dec, saturn_distance = EXCLUDED.saturn_distance,
-            uranus_ra = EXCLUDED.uranus_ra, uranus_dec = EXCLUDED.uranus_dec, uranus_distance = EXCLUDED.uranus_distance,
-            neptune_ra = EXCLUDED.neptune_ra, neptune_dec = EXCLUDED.neptune_dec, neptune_distance = EXCLUDED.neptune_distance,
-            moon_ra = EXCLUDED.moon_ra, moon_dec = EXCLUDED.moon_dec, moon_distance = EXCLUDED.moon_distance,
-            using_fallback_data = EXCLUDED.using_fallback_data, data_sources = EXCLUDED.data_sources
-    `;
+    // Check if the new columns exist in the database
+    try {
+        // Try to query the new columns to see if they exist
+        await db.query('SELECT using_fallback_data, data_sources FROM ephemeris_data LIMIT 1');
+        
+        // New schema - includes data source tracking
+        const query = `
+            INSERT INTO ephemeris_data (
+                date, location, sun_ra, sun_dec, sun_distance,
+                mercury_ra, mercury_dec, mercury_distance,
+                venus_ra, venus_dec, venus_distance,
+                mars_ra, mars_dec, mars_distance,
+                jupiter_ra, jupiter_dec, jupiter_distance,
+                saturn_ra, saturn_dec, saturn_distance,
+                uranus_ra, uranus_dec, uranus_distance,
+                neptune_ra, neptune_dec, neptune_distance,
+                moon_ra, moon_dec, moon_distance,
+                using_fallback_data, data_sources
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+                $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
+            )
+            ON CONFLICT (date, location) DO UPDATE SET
+                sun_ra = EXCLUDED.sun_ra, sun_dec = EXCLUDED.sun_dec, sun_distance = EXCLUDED.sun_distance,
+                mercury_ra = EXCLUDED.mercury_ra, mercury_dec = EXCLUDED.mercury_dec, mercury_distance = EXCLUDED.mercury_distance,
+                venus_ra = EXCLUDED.venus_ra, venus_dec = EXCLUDED.venus_dec, venus_distance = EXCLUDED.venus_distance,
+                mars_ra = EXCLUDED.mars_ra, mars_dec = EXCLUDED.mars_dec, mars_distance = EXCLUDED.mars_distance,
+                jupiter_ra = EXCLUDED.jupiter_ra, jupiter_dec = EXCLUDED.jupiter_dec, jupiter_distance = EXCLUDED.jupiter_distance,
+                saturn_ra = EXCLUDED.saturn_ra, saturn_dec = EXCLUDED.saturn_dec, saturn_distance = EXCLUDED.saturn_distance,
+                uranus_ra = EXCLUDED.uranus_ra, uranus_dec = EXCLUDED.uranus_dec, uranus_distance = EXCLUDED.uranus_distance,
+                neptune_ra = EXCLUDED.neptune_ra, neptune_dec = EXCLUDED.neptune_dec, neptune_distance = EXCLUDED.neptune_distance,
+                moon_ra = EXCLUDED.moon_ra, moon_dec = EXCLUDED.moon_dec, moon_distance = EXCLUDED.moon_distance,
+                using_fallback_data = EXCLUDED.using_fallback_data, data_sources = EXCLUDED.data_sources
+        `;
+        
+        const values = [
+            date, location,
+            data.sun_ra, data.sun_dec, data.sun_distance,
+            data.mercury_ra, data.mercury_dec, data.mercury_distance,
+            data.venus_ra, data.venus_dec, data.venus_distance,
+            data.mars_ra, data.mars_dec, data.mars_distance,
+            data.jupiter_ra, data.jupiter_dec, data.jupiter_distance,
+            data.saturn_ra, data.saturn_dec, data.saturn_distance,
+            data.uranus_ra, data.uranus_dec, data.uranus_distance,
+            data.neptune_ra, data.neptune_dec, data.neptune_distance,
+            data.moon_ra, data.moon_dec, data.moon_distance,
+            data.data_source_info?.using_fallback_data || false,
+            JSON.stringify(data.data_source_info?.sources || {})
+        ];
+        
+        await db.query(query, values);
+        console.log('Stored ephemeris data with source tracking');
+        
+    } catch (error) {
+        // If the new columns don't exist, fall back to the old schema
+        if (error.code === '42703') { // Column does not exist error
+            console.log('Using legacy database schema (no source tracking)');
+            
+            const legacyQuery = `
+                INSERT INTO ephemeris_data (
+                    date, location, sun_ra, sun_dec, sun_distance,
+                    mercury_ra, mercury_dec, mercury_distance,
+                    venus_ra, venus_dec, venus_distance,
+                    mars_ra, mars_dec, mars_distance,
+                    jupiter_ra, jupiter_dec, jupiter_distance,
+                    saturn_ra, saturn_dec, saturn_distance,
+                    uranus_ra, uranus_dec, uranus_distance,
+                    neptune_ra, neptune_dec, neptune_distance,
+                    moon_ra, moon_dec, moon_distance
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+                    $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29
+                )
+                ON CONFLICT (date, location) DO UPDATE SET
+                    sun_ra = EXCLUDED.sun_ra, sun_dec = EXCLUDED.sun_dec, sun_distance = EXCLUDED.sun_distance,
+                    mercury_ra = EXCLUDED.mercury_ra, mercury_dec = EXCLUDED.mercury_dec, mercury_distance = EXCLUDED.mercury_distance,
+                    venus_ra = EXCLUDED.venus_ra, venus_dec = EXCLUDED.venus_dec, venus_distance = EXCLUDED.venus_distance,
+                    mars_ra = EXCLUDED.mars_ra, mars_dec = EXCLUDED.mars_dec, mars_distance = EXCLUDED.mars_distance,
+                    jupiter_ra = EXCLUDED.jupiter_ra, jupiter_dec = EXCLUDED.jupiter_dec, jupiter_distance = EXCLUDED.jupiter_distance,
+                    saturn_ra = EXCLUDED.saturn_ra, saturn_dec = EXCLUDED.saturn_dec, saturn_distance = EXCLUDED.saturn_distance,
+                    uranus_ra = EXCLUDED.uranus_ra, uranus_dec = EXCLUDED.uranus_dec, uranus_distance = EXCLUDED.uranus_distance,
+                    neptune_ra = EXCLUDED.neptune_ra, neptune_dec = EXCLUDED.neptune_dec, neptune_distance = EXCLUDED.neptune_distance,
+                    moon_ra = EXCLUDED.moon_ra, moon_dec = EXCLUDED.moon_dec, moon_distance = EXCLUDED.moon_distance
+            `;
+            
+            const legacyValues = [
+                date, location,
+                data.sun_ra, data.sun_dec, data.sun_distance,
+                data.mercury_ra, data.mercury_dec, data.mercury_distance,
+                data.venus_ra, data.venus_dec, data.venus_distance,
+                data.mars_ra, data.mars_dec, data.mars_distance,
+                data.jupiter_ra, data.jupiter_dec, data.jupiter_distance,
+                data.saturn_ra, data.saturn_dec, data.saturn_distance,
+                data.uranus_ra, data.uranus_dec, data.uranus_distance,
+                data.neptune_ra, data.neptune_dec, data.neptune_distance,
+                data.moon_ra, data.moon_dec, data.moon_distance
+            ];
+            
+            await db.query(legacyQuery, legacyValues);
+            console.log('Stored ephemeris data using legacy schema');
+        } else {
+            // Re-throw other errors
+            throw error;
+        }
+    }
     
-    const values = [
-        date, location,
-        data.sun_ra, data.sun_dec, data.sun_distance,
-        data.mercury_ra, data.mercury_dec, data.mercury_distance,
-        data.venus_ra, data.venus_dec, data.venus_distance,
-        data.mars_ra, data.mars_dec, data.mars_distance,
-        data.jupiter_ra, data.jupiter_dec, data.jupiter_distance,
-        data.saturn_ra, data.saturn_dec, data.saturn_distance,
-        data.uranus_ra, data.uranus_dec, data.uranus_distance,
-        data.neptune_ra, data.neptune_dec, data.neptune_distance,
-        data.moon_ra, data.moon_dec, data.moon_distance,
-        data.data_source_info?.using_fallback_data || false,
-        JSON.stringify(data.data_source_info?.sources || {})
-    ];
-    
-    await db.query(query, values);
     return { ...data, date, location };
 }
 

@@ -576,9 +576,9 @@
                 favorable: '✨'
             };
             
-            // Check for data source warnings
+            // Check for data source warnings (handle both new and legacy database schemas)
             let dataWarning = '';
-            if (ephemeris && ephemeris.using_fallback_data) {
+            if (ephemeris && ephemeris.using_fallback_data === true) {
                 dataWarning = `
                     <div class="warning">
                         <span class="warning-icon">⚠️</span>
@@ -668,9 +668,9 @@
                 }
                 
                 if (ephemeris && !ephemeris.error) {
-                    // Check for data source warnings
+                    // Check for data source warnings (handle both new and legacy database schemas)
                     let dataWarning = '';
-                    if (ephemeris.using_fallback_data) {
+                    if (ephemeris.using_fallback_data === true) {
                         dataWarning = `
                             <div class="warning">
                                 <span class="warning-icon">⚠️</span>

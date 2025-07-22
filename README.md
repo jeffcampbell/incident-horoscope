@@ -14,7 +14,18 @@ A fun and entertaining horoscope generator that uses real NASA astronomical data
   - Testing and code review focus areas
   - Leadership opportunities
 
-## 🚀 Quick Start
+## 🚀 Production Deployment
+
+For production deployments, if you're upgrading from an earlier version, you may need to run the database migration:
+
+```sql
+-- Run this on your production database to add data source tracking
+\i scripts/migrate-add-data-sources.sql
+```
+
+The application is backward-compatible and will work with both old and new database schemas.
+
+## 🛠️ Quick Start
 
 ### Using Docker (Recommended)
 
