@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 Planetary Horoscope for DevOps Teams</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        input, select, button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .horoscope-card {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .prediction {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid;
+        }
+        
+        .prediction.high { border-left-color: #ff4757; }
+        .prediction.medium { border-left-color: #ffa502; }
+        .prediction.positive { border-left-color: #2ed573; }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+        }
+        
+        .error {
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid #ff4757;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .horoscope-section {
+            margin-bottom: 40px;
+        }
+        
+        .horoscope-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .planetary-positions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .planet-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .planet-card.active {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .planet-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .planet-sign {
+            color: #ffd700;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .planet-influence {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #ffd700;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .future-horoscope {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            margin-top: 20px;
+        }
+        
+        .date-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .knowledge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .planet-knowledge-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .planet-knowledge-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .planet-knowledge-card h4 {
+            color: #ffd700;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .planet-knowledge-card p {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .horoscope-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 20px;
+            }
+            
+            .control-group {
+                align-items: stretch;
+            }
+            
+            .date-input-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .date-input-group input {
+                width: 100%;
+            }
+            
+            .date-input-group button {
+                width: 100%;
+                padding: 12px;
+            }
+            
+            button {
+                padding: 12px;
+                font-size: 1rem;
+                white-space: nowrap;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .horoscope-controls {
+                padding: 15px;
+                gap: 15px;
+            }
+            
+            button {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔮 Planetary Horoscope for DevOps Teams</h1>
+            <p>Cosmic insights for software incident response and operations</p>
+        </div>
+        
+        <!-- Horoscope Section - Main focus -->
+        <div class="horoscope-section">
+            <div class="horoscope-controls">
+                <div class="control-group">
+                    <label>Generate Horoscope For:</label>
+                    <div class="date-input-group">
+                        <input type="date" id="horoscopeDate" value="">
+                        <button onclick="generateHoroscope()">🌟 Generate Horoscope</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <button onclick="generateHoroscope('today')">🔮 Today's Horoscope</button>
+                    <button onclick="showPlanetaryPositions()">🌎 Current Planetary Positions</button>
+                </div>
+            </div>
+            
+            <div class="loading-spinner" id="horoscopeLoading">
+                <div class="spinner"></div>
+                <div>Consulting the cosmic forces and analyzing planetary influences...</div>
+            </div>
+            
+            <div class="card horoscope-card" id="horoscope" style="display: none;">
+                <h3 id="horoscopeTitle">🔮 Planetary Horoscope</h3>
+                <div id="horoscopeContent">
+                    <!-- Horoscope content will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="card" id="planetaryPositions" style="display: none;">
+                <h3>🌌 Current Planetary Positions</h3>
+                <div class="planetary-positions" id="planetaryGrid">
+                    <!-- Planetary positions will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Planetary Knowledge Base -->
+        <div class="card">
+            <h3>🌟 Planetary Influences for Software Teams</h3>
+            <div class="planetary-knowledge" id="planetaryKnowledge">
+                <div class="knowledge-grid">
+                    <div class="planet-knowledge-card">
+                        <h4>☉ Sun - Leadership & Authority</h4>
+                        <p>Influences system governance, architectural decisions, and technical leadership. Strong solar energy favors major system changes and establishing technical authority.</p>
+                    </div>
+                    <div class="planet-knowledge-card">
+                        <h4>☿ Mercury - Communication & Deployments</h4>
+                        <p>Governs data flow, API communications, and deployment processes. Mercury retrograde periods may increase configuration and communication errors.</p>
+                    </div>
+                    <div class="planet-knowledge-card">
+                        <h4>♀ Venus - Team Harmony & User Experience</h4>
+                        <p>Affects team collaboration, user satisfaction, and interface design. Positive Venus energy supports cross-functional coordination and UX improvements.</p>
+                    </div>
+                    <div class="planet-knowledge-card">
+                        <h4>♂ Mars - Incidents & System Conflicts</h4>
+                        <p>Associated with critical incidents, security breaches, and system conflicts. High Mars energy requires extra vigilance and incident preparedness.</p>
+                    </div>
+                    <div class="planet-knowledge-card">
+                        <h4>♃ Jupiter - Growth & Learning</h4>
+                        <p>Promotes learning opportunities, process improvements, and system expansion. Favorable for post-mortems, training, and capability building.</p>
+                    </div>
+                    <div class="planet-knowledge-card">
+                        <h4>♄ Saturn - Structure & Testing</h4>
+                        <p>Emphasizes discipline, testing rigor, and structured processes. Strong Saturn influence calls for thorough code reviews and compliance checks.</p>
+                    </div>
+                    <div class="planet-knowledge-card">
+                        <h4>☽ Moon - On-call & Team Emotions</h4>
+                        <p>Affects emotional responses to incidents and on-call experiences. Moon phases influence team stress levels and support needs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize dashboard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date for horoscope
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('horoscopeDate').value = today;
+        });
+        
+        async function generateHoroscope(dateType = 'custom') {
+            const horoscopeCard = document.getElementById('horoscope');
+            const horoscopeContent = document.getElementById('horoscopeContent');
+            const horoscopeTitle = document.getElementById('horoscopeTitle');
+            const horoscopeLoading = document.getElementById('horoscopeLoading');
+            
+            let targetDate;
+            if (dateType === 'today') {
+                targetDate = new Date().toISOString().split('T')[0];
+                horoscopeTitle.textContent = '🔮 Today\'s DevOps Horoscope';
+            } else {
+                targetDate = document.getElementById('horoscopeDate').value;
+                if (!targetDate) {
+                    alert('Please select a date for the horoscope');
+                    return;
+                }
+                
+                // Fix timezone issue by creating date properly
+                const dateParts = targetDate.split('-');
+                const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                const todayStr = new Date().toISOString().split('T')[0];
+                const isFuture = targetDate > todayStr;
+                
+                if (targetDate === todayStr) {
+                    horoscopeTitle.textContent = '🔮 Today\'s DevOps Horoscope';
+                } else if (isFuture) {
+                    horoscopeTitle.textContent = `🔮 Future DevOps Horoscope for ${dateObj.toLocaleDateString()}`;
+                } else {
+                    horoscopeTitle.textContent = `🔮 Historical DevOps Horoscope for ${dateObj.toLocaleDateString()}`;
+                }
+            }
+            
+            horoscopeCard.style.display = 'block';
+            horoscopeLoading.style.display = 'block';
+            horoscopeContent.innerHTML = '';
+            
+            try {
+                // First try to get ephemeris data for the target date
+                let ephemerisResponse = await fetch(`/api/ephemeris?date=${targetDate}`);
+                
+                if (!ephemerisResponse.ok) {
+                    // If ephemeris data doesn't exist, try to fetch it
+                    horoscopeLoading.innerHTML = `
+                        <div class="spinner"></div>
+                        <div>Fetching astronomical data from NASA JPL Horizons...</div>
+                    `;
+                    
+                    ephemerisResponse = await fetch('/api/ephemeris/bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ dates: [targetDate] })
+                    });
+                    
+                    if (!ephemerisResponse.ok) {
+                        throw new Error('Failed to fetch ephemeris data');
+                    }
+                }
+                
+                horoscopeLoading.innerHTML = `
+                    <div class="spinner"></div>
+                    <div>Analyzing planetary influences for software operations...</div>
+                `;
+                
+                // Generate horoscope
+                const horoscopeResponse = await fetch(`/api/horoscope?date=${targetDate}`);
+                const horoscope = await horoscopeResponse.json();
+                
+                if (horoscope.horoscope) {
+                    await renderHoroscope(horoscope.horoscope, horoscope.ephemeris);
+                } else {
+                    horoscopeContent.innerHTML = `
+                        <div class="prediction medium">
+                            <h4>🌌 Cosmic Data Processing</h4>
+                            <p>${horoscope.message || 'Ephemeris data is being processed. Please try again in a moment.'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error generating horoscope:', error);
+                horoscopeContent.innerHTML = `
+                    <div class="error">
+                        <h4>🌙 The Cosmic Connection is Disrupted</h4>
+                        <p>Unable to consult the celestial bodies at this time. Error: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                horoscopeLoading.style.display = 'none';
+            }
+        }
+        
+        async function renderHoroscope(horoscope, ephemeris) {
+            const horoscopeContent = document.getElementById('horoscopeContent');
+            
+            const riskLevelEmoji = {
+                high: '🔴',
+                medium: '🟡', 
+                normal: '🟢',
+                favorable: '✨'
+            };
+            
+            // Show planetary positions first
+            const planetaryInfo = horoscope.planetary_summary ? generatePlanetaryInfo(horoscope.planetary_summary) : '';
+            
+            horoscopeContent.innerHTML = `
+                ${planetaryInfo}
+                
+                <div class="prediction ${horoscope.overall_risk_level}">
+                    <h4>${riskLevelEmoji[horoscope.overall_risk_level]} Overall Risk Level: ${horoscope.overall_risk_level.toUpperCase()}</h4>
+                    <p><em>"${horoscope.cosmic_advice}"</em></p>
+                </div>
+                
+                <h4 style="margin: 20px 0 10px 0;">🔮 Cosmic Predictions for Your Operations:</h4>
+                ${horoscope.predictions.map(pred => `
+                    <div class="prediction ${pred.level}">
+                        <h5>${pred.planet} - ${pred.category.replace(/_/g, ' ').toUpperCase()}</h5>
+                        <p>${pred.message}</p>
+                        <small>Confidence: ${Math.round(pred.confidence * 100)}%</small>
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        function generatePlanetaryInfo(planetarySummary) {
+            return `
+                <h4 style="margin-bottom: 15px;">🌌 Today's Planetary Influences</h4>
+                <div class="planetary-positions">
+                    ${planetarySummary.map(planet => {
+                        return `
+                            <div class="planet-card ${planet.influence_strength === 'high' ? 'active' : ''}">
+                                <div class="planet-name">${planet.symbol} ${planet.name}</div>
+                                <div class="planet-sign">in ${planet.sign}</div>
+                                <div class="planet-influence">${planet.domain}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        async function showPlanetaryPositions() {
+            const planetaryCard = document.getElementById('planetaryPositions');
+            const planetaryGrid = document.getElementById('planetaryGrid');
+            const today = new Date().toISOString().split('T')[0];
+            
+            planetaryCard.style.display = 'block';
+            planetaryGrid.innerHTML = '<div class="loading">Loading current planetary positions...</div>';
+            
+            try {
+                const response = await fetch(`/api/ephemeris?date=${today}`);
+                let ephemeris;
+                
+                if (!response.ok) {
+                    // Try to fetch ephemeris data
+                    const bulkResponse = await fetch('/api/ephemeris/bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ dates: [today] })
+                    });
+                    
+                    if (bulkResponse.ok) {
+                        const bulkData = await bulkResponse.json();
+                        ephemeris = bulkData.results[0];
+                    }
+                } else {
+                    ephemeris = await response.json();
+                }
+                
+                if (ephemeris && !ephemeris.error) {
+                    planetaryGrid.innerHTML = generatePlanetaryInfo(ephemeris);
+                } else {
+                    planetaryGrid.innerHTML = `
+                        <div class="error">
+                            <h4>🌙 Unable to Load Planetary Data</h4>
+                            <p>Could not fetch current planetary positions. Please try again later.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading planetary positions:', error);
+                planetaryGrid.innerHTML = `
+                    <div class="error">
+                        <h4>🌙 Connection Error</h4>
+                        <p>Failed to connect to astronomical data source.</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
