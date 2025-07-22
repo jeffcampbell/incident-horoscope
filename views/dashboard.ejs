@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔮 Planetary Horoscope for DevOps Teams</title>
+    <title>🔮 Planetary Horoscope for SRE Teams</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -99,6 +99,12 @@
             gap: 5px;
         }
         
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
         .control-group label {
             font-size: 0.9rem;
             opacity: 0.9;
@@ -167,6 +173,23 @@
             margin: 10px 0;
         }
         
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            color: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .warning-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
         .horoscope-section {
             margin-bottom: 40px;
         }
@@ -176,7 +199,7 @@
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 20px;
-            align-items: flex-start;
+            align-items: flex-end;
             background: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 15px;
@@ -313,6 +336,11 @@
                 align-items: stretch;
             }
             
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
             .date-input-group {
                 flex-direction: column;
                 align-items: stretch;
@@ -360,7 +388,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔮 Planetary Horoscope for DevOps Teams</h1>
+            <h1>🔮 Planetary Horoscope for SRE Teams</h1>
             <p>Cosmic insights for software incident response and operations</p>
         </div>
         
@@ -375,8 +403,10 @@
                     </div>
                 </div>
                 <div class="control-group">
-                    <button onclick="generateHoroscope('today')">🔮 Today's Horoscope</button>
-                    <button onclick="showPlanetaryPositions()">🌎 Current Planetary Positions</button>
+                    <div class="button-group">
+                        <button onclick="generateHoroscope('today')">🔮 Today's Horoscope</button>
+                        <button onclick="showPlanetaryPositions()">🌎 Current Planetary Positions</button>
+                    </div>
                 </div>
             </div>
             
@@ -455,7 +485,7 @@
             let targetDate;
             if (dateType === 'today') {
                 targetDate = new Date().toISOString().split('T')[0];
-                horoscopeTitle.textContent = '🔮 Today\'s DevOps Horoscope';
+                horoscopeTitle.textContent = '🔮 Today\'s SRE Horoscope';
             } else {
                 targetDate = document.getElementById('horoscopeDate').value;
                 if (!targetDate) {
@@ -470,11 +500,11 @@
                 const isFuture = targetDate > todayStr;
                 
                 if (targetDate === todayStr) {
-                    horoscopeTitle.textContent = '🔮 Today\'s DevOps Horoscope';
+                    horoscopeTitle.textContent = '🔮 Today\'s SRE Horoscope';
                 } else if (isFuture) {
-                    horoscopeTitle.textContent = `🔮 Future DevOps Horoscope for ${dateObj.toLocaleDateString()}`;
+                    horoscopeTitle.textContent = `🔮 Future SRE Horoscope for ${dateObj.toLocaleDateString()}`;
                 } else {
-                    horoscopeTitle.textContent = `🔮 Historical DevOps Horoscope for ${dateObj.toLocaleDateString()}`;
+                    horoscopeTitle.textContent = `🔮 Historical SRE Horoscope for ${dateObj.toLocaleDateString()}`;
                 }
             }
             
@@ -546,10 +576,34 @@
                 favorable: '✨'
             };
             
+            // Check for data source warnings
+            let dataWarning = '';
+            if (ephemeris && ephemeris.using_fallback_data) {
+                dataWarning = `
+                    <div class="warning">
+                        <span class="warning-icon">⚠️</span>
+                        <div>
+                            <strong>NASA Data Unavailable:</strong> Using approximated planetary positions based on orbital calculations. 
+                            The NASA JPL Horizons system is currently unreachable, so we're using our best astronomical estimates.
+                        </div>
+                    </div>
+                `;
+            } else if (ephemeris && ephemeris.data_source_info && ephemeris.data_source_info.warning) {
+                dataWarning = `
+                    <div class="warning">
+                        <span class="warning-icon">⚠️</span>
+                        <div>
+                            <strong>Mixed Data Sources:</strong> ${ephemeris.data_source_info.warning}
+                        </div>
+                    </div>
+                `;
+            }
+            
             // Show planetary positions first
             const planetaryInfo = horoscope.planetary_summary ? generatePlanetaryInfo(horoscope.planetary_summary) : '';
             
             horoscopeContent.innerHTML = `
+                ${dataWarning}
                 ${planetaryInfo}
                 
                 <div class="prediction ${horoscope.overall_risk_level}">
@@ -614,7 +668,21 @@
                 }
                 
                 if (ephemeris && !ephemeris.error) {
-                    planetaryGrid.innerHTML = generatePlanetaryInfo(ephemeris);
+                    // Check for data source warnings
+                    let dataWarning = '';
+                    if (ephemeris.using_fallback_data) {
+                        dataWarning = `
+                            <div class="warning">
+                                <span class="warning-icon">⚠️</span>
+                                <div>
+                                    <strong>Using Approximated Data:</strong> NASA JPL Horizons data is unavailable. 
+                                    Planetary positions are calculated using orbital mechanics approximations.
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    planetaryGrid.innerHTML = dataWarning + generatePlanetaryInfo(ephemeris);
                 } else {
                     planetaryGrid.innerHTML = `
                         <div class="error">

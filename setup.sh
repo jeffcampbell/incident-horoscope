@@ -40,15 +40,6 @@ setup_docker() {
     echo "⏳ Waiting for database to be ready..."
     sleep 10
     
-    # Import data if CSV exists
-    if [ -f "./data/full_incidents.csv" ]; then
-        echo "📊 Importing incident data..."
-        docker-compose exec app npm run import-data
-    else
-        echo "⚠️  No incident data found at ./data/full_incidents.csv"
-        echo "   Please add your CSV file there and run: docker-compose exec app npm run import-data"
-    fi
-    
     echo "🎉 Setup complete! Visit http://localhost:3000"
 }
 

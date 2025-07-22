@@ -79,4 +79,4 @@ git push origin main
 ## Post-Deployment:
 1. Visit your app URL
 2. Click "Generate Horoscope" to fetch initial astronomical data
-3. Share your cosmic DevOps insights with the world! 🌟
+3. Share your cosmic SRE insights with the world! 🌟

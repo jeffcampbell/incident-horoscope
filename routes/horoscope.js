@@ -65,7 +65,7 @@ async function generateHoroscope(ephemeris) {
     // Mars - Incident Risk and System Conflicts
     const marsIntensity = Math.abs(ephemeris.mars_ra % 30);
     const marsSign = getAstrologicalSign(ephemeris.mars_ra);
-    if (marsIntensity > 25) {
+    if (marsIntensity > 27) {  // Reduced frequency: was >25, now >27 (10% instead of 17%)
         predictions.push({
             category: 'incident_risk',
             level: 'high',
@@ -73,7 +73,7 @@ async function generateHoroscope(ephemeris) {
             confidence: 0.75,
             planet: 'Mars'
         });
-    } else if (marsIntensity > 15) {
+    } else if (marsIntensity > 20) {  // Was >15, now >20 for more selectivity
         predictions.push({
             category: 'incident_risk',
             level: 'medium',
@@ -81,17 +81,33 @@ async function generateHoroscope(ephemeris) {
             confidence: 0.6,
             planet: 'Mars'
         });
+    } else if (marsIntensity < 5) {  // Add positive Mars condition
+        predictions.push({
+            category: 'system_stability',
+            level: 'positive',
+            message: `Mars in ${marsSign} supports system stability and smooth operations. Good day for maintenance and system updates.`,
+            confidence: 0.5,
+            planet: 'Mars'
+        });
     }
     
     // Mercury - Communication and Deployment Issues
     const mercuryPosition = ephemeris.mercury_ra % 360;
     const mercurySign = getAstrologicalSign(ephemeris.mercury_ra);
-    if (mercuryPosition > 300 || mercuryPosition < 60) {
+    if (mercuryPosition > 330 || mercuryPosition < 30) {  // Reduced from 300/60 to 330/30 (17% instead of 33%)
         predictions.push({
             category: 'communication_risk',
             level: 'medium',
             message: `Mercury in ${mercurySign} may cause communication and deployment-related issues. Double-check configurations, review change management processes, and ensure clear team communication.`,
             confidence: 0.65,
+            planet: 'Mercury'
+        });
+    } else if (mercuryPosition > 150 && mercuryPosition < 210) {  // Add positive Mercury condition
+        predictions.push({
+            category: 'communication_flow',
+            level: 'positive',
+            message: `Mercury in ${mercurySign} enhances communication clarity and deployment success. Excellent time for releases and system integrations.`,
+            confidence: 0.6,
             planet: 'Mercury'
         });
     }
@@ -125,7 +141,7 @@ async function generateHoroscope(ephemeris) {
     // Saturn - Structure, Testing, and Discipline
     const saturnDiscipline = Math.cos(ephemeris.saturn_ra * Math.PI / 180);
     const saturnSign = getAstrologicalSign(ephemeris.saturn_ra);
-    if (saturnDiscipline > 0.3) {
+    if (saturnDiscipline > 0.7) {  // Increased from 0.3 to 0.7 (much more selective)
         predictions.push({
             category: 'testing_focus',
             level: 'medium',
@@ -133,17 +149,33 @@ async function generateHoroscope(ephemeris) {
             confidence: 0.6,
             planet: 'Saturn'
         });
+    } else if (saturnDiscipline < -0.5) {  // Add negative Saturn condition
+        predictions.push({
+            category: 'process_flexibility',
+            level: 'positive',
+            message: `Saturn in ${saturnSign} supports flexible processes and rapid adaptation. Good time for agile practices and quick iterations.`,
+            confidence: 0.5,
+            planet: 'Saturn'
+        });
     }
     
     // Moon - On-call and Emotional Responses
     const moonPhase = (ephemeris.moon_ra / 15) % 24;
     const moonSign = getAstrologicalSign(ephemeris.moon_ra);
-    if (moonPhase < 6 || moonPhase > 18) {
+    if (moonPhase < 3 || moonPhase > 21) {  // Reduced from 6/18 to 3/21 (25% instead of 50%)
         predictions.push({
             category: 'on_call_management',
             level: 'medium',
             message: `Moon in ${moonSign} suggests heightened emotional responses to incidents. Ensure adequate on-call coverage and support systems for team well-being.`,
             confidence: 0.7,
+            planet: 'Moon'
+        });
+    } else if (moonPhase > 10 && moonPhase < 14) {  // Add positive Moon condition
+        predictions.push({
+            category: 'team_wellness',
+            level: 'positive',
+            message: `Moon in ${moonSign} supports team emotional balance and resilience. Good time for team building and stress management initiatives.`,
+            confidence: 0.55,
             planet: 'Moon'
         });
     }
@@ -176,9 +208,10 @@ function calculateOverallRisk(predictions) {
         return sum + (riskLevels[pred.level] || 0) * pred.confidence;
     }, 0);
     
-    if (totalRisk > 1.5) return 'high';
-    if (totalRisk > 0.5) return 'medium';
-    if (totalRisk < -0.5) return 'favorable';
+    // Adjusted thresholds for more variety - made them higher to reduce "high" frequency
+    if (totalRisk > 3.0) return 'high';      // Was 1.5, now requires more risk factors
+    if (totalRisk > 1.0) return 'medium';    // Was 0.5, now requires more medium factors  
+    if (totalRisk < -0.8) return 'favorable'; // Slightly adjusted for positive days
     return 'normal';
 }
 
