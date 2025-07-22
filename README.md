@@ -1,4 +1,4 @@
-# 🔮 Planetary Horoscope for DevOps Teams
+# 🔮 Planetary Horoscope for SRE Teams
 
 A fun and entertaining horoscope generator that uses real NASA astronomical data to provide "cosmic insights" for software incident response and operations teams. Perfect for adding some levity to your team's daily standup or incident retrospectives!
 
@@ -6,7 +6,7 @@ A fun and entertaining horoscope generator that uses real NASA astronomical data
 
 - **Real Astronomical Data**: Fetches planetary positions from NASA JPL Horizons API
 - **Future Horoscope Generation**: Generate horoscopes for any future date based on planetary alignments
-- **DevOps-Focused Predictions**: Tailored predictions for software teams covering:
+- **SRE-Focused Predictions**: Tailored predictions for software teams covering:
   - Incident risk levels
   - Communication and deployment issues
   - Team collaboration insights
@@ -14,7 +14,18 @@ A fun and entertaining horoscope generator that uses real NASA astronomical data
   - Testing and code review focus areas
   - Leadership opportunities
 
-## 🚀 Quick Start
+## 🚀 Production Deployment
+
+For production deployments, if you're upgrading from an earlier version, you may need to run the database migration:
+
+```sql
+-- Run this on your production database to add data source tracking
+\i scripts/migrate-add-data-sources.sql
+```
+
+The application is backward-compatible and will work with both old and new database schemas.
+
+## 🛠️ Quick Start
 
 ### Using Docker (Recommended)
 
@@ -61,7 +72,7 @@ The application combines real astronomical data with entertaining "cosmic correl
 
 1. **Today's Horoscope**: Get instant cosmic insights for today's operations
 2. **Future Predictions**: Select any future date to see what the planets have in store
-3. **Planetary Positions**: View current astrological positions and their DevOps influences
+3. **Planetary Positions**: View current astrological positions and their SRE influences
 
 ## 🛠 Technology Stack
 
@@ -80,7 +91,7 @@ The application combines real astronomical data with entertaining "cosmic correl
 
 ## 🎭 Disclaimer
 
-This application is created for entertainment purposes only! The "cosmic correlations" are humorous interpretations and should not be used for actual operational decisions. Real astronomical data is used, but the DevOps predictions are purely fictional and meant to bring some fun to your team culture.
+This application is created for entertainment purposes only! The "cosmic correlations" are humorous interpretations and should not be used for actual operational decisions. Real astronomical data is used, but the SRE predictions are purely fictional and meant to bring some fun to your team culture.
 
 ## 🤝 Contributing
 
@@ -98,7 +109,7 @@ MIT License - Feel free to use this for your team's entertainment!
 ## 🌟 Credits
 
 - Astronomical data provided by NASA JPL Horizons System
-- Created with cosmic inspiration for the DevOps community
+- Created with cosmic inspiration for the SRE community
 
 ---
 

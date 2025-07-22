@@ -49,6 +49,11 @@ app.get('/', (req, res) => {
     res.render('dashboard');
 });
 
+// How it works page
+app.get('/how-it-works', (req, res) => {
+    res.render('how-it-works');
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
