@@ -1163,17 +1163,6 @@
                 `;
             }
             
-            // Show the stained glass orrery if we have ephemeris data
-            if (ephemeris && orrery) {
-                orreryContainer.style.display = 'flex';
-                orreryLegend.style.display = 'flex';
-                
-                // Small delay to ensure canvas is visible before drawing
-                setTimeout(() => {
-                    orrery.updateOrrery(ephemeris);
-                }, 100);
-            }
-            
             // Show planetary positions first
             const planetaryInfo = horoscope.planetary_summary ? generatePlanetaryInfo(horoscope.planetary_summary) : '';
             
@@ -1281,18 +1270,6 @@
                 }
                 
                 if (ephemeris && !ephemeris.error) {
-                    // Show the stained glass orrery for current positions
-                    if (currentOrrery) {
-                        document.getElementById('currentOrreryContainer').style.display = 'flex';
-                        document.getElementById('currentOrreryLegend').style.display = 'flex';
-                        
-                        // Small delay to ensure canvas is visible before drawing
-                        setTimeout(() => {
-                            currentOrrery.updateOrrery(ephemeris);
-                            currentOrrery.updateLegend('currentOrreryLegend');
-                        }, 100);
-                    }
-                    
                     // Check for data source warnings (handle both new and legacy database schemas)
                     let dataWarning = '';
                     if (ephemeris.using_fallback_data === true) {
@@ -1305,8 +1282,7 @@
                                 </div>
                             </div>
                         `;
-                    }
-                    
+                    }                    
                     planetaryGrid.innerHTML = dataWarning + generatePlanetaryGrid(ephemeris);
                 } else {
                     planetaryGrid.innerHTML = `
