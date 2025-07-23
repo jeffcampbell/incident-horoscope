@@ -828,12 +828,16 @@
     <div class="container">
         <div class="header">
             <h1>🔮 SRE Horoscope Generator</h1>
-            <p>Cosmic insights for deploys and incident response</p>
+            <p>Cosmic insights for code deploys and incident response</p>
         </div>
         
         <!-- Horoscope Section - Main focus -->
         <div class="horoscope-section">
             <div class="horoscope-controls">
+                <div class="control-group">
+                    <label>Your Birthday (optional - for personalized insights):</label>
+                    <input type="date" id="userBirthday" placeholder="Optional: Your birthday">
+                </div>
                 <div class="control-group">
                     <label>Generate Horoscope For:</label>
                     <div class="date-input-group">
@@ -1282,10 +1286,13 @@
             const horoscopeTitle = document.getElementById('horoscopeTitle');
             const horoscopeLoading = document.getElementById('horoscopeLoading');
             
+            // Get birthday for personalized horoscope
+            const birthday = document.getElementById('userBirthday').value;
+            
             let targetDate;
             if (dateType === 'today') {
                 targetDate = new Date().toISOString().split('T')[0];
-                horoscopeTitle.textContent = '🔮 Today\'s SRE Horoscope';
+                horoscopeTitle.textContent = '🔮 Today\'s Horoscope';
             } else {
                 targetDate = document.getElementById('horoscopeDate').value;
                 if (!targetDate) {
@@ -1300,11 +1307,11 @@
                 const isFuture = targetDate > todayStr;
                 
                 if (targetDate === todayStr) {
-                    horoscopeTitle.textContent = '🔮 Today\'s SRE Horoscope';
+                    horoscopeTitle.textContent = '🔮 Today\'s Horoscope';
                 } else if (isFuture) {
-                    horoscopeTitle.textContent = `🔮 Future SRE Horoscope for ${dateObj.toLocaleDateString()}`;
+                    horoscopeTitle.textContent = `🔮 Future Horoscope for ${dateObj.toLocaleDateString()}`;
                 } else {
-                    horoscopeTitle.textContent = `🔮 Historical SRE Horoscope for ${dateObj.toLocaleDateString()}`;
+                    horoscopeTitle.textContent = `🔮 Historical Horoscope for ${dateObj.toLocaleDateString()}`;
                 }
             }
             
@@ -1313,6 +1320,12 @@
             horoscopeContent.innerHTML = '';
             
             try {
+                // Build URL with birthday parameter if provided
+                let url = `/api/horoscope?date=${targetDate}`;
+                if (birthday) {
+                    url += `&birthday=${birthday}`;
+                }
+                
                 // First try to get ephemeris data for the target date
                 let ephemerisResponse = await fetch(`/api/ephemeris?date=${targetDate}`);
                 
@@ -1340,11 +1353,11 @@
                 `;
                 
                 // Generate horoscope
-                const horoscopeResponse = await fetch(`/api/horoscope?date=${targetDate}`);
+                const horoscopeResponse = await fetch(url);
                 const horoscope = await horoscopeResponse.json();
                 
                 if (horoscope.horoscope) {
-                    await renderHoroscope(horoscope.horoscope, horoscope.ephemeris);
+                    await renderHoroscope(horoscope.horoscope, horoscope.ephemeris, birthday);
                 } else {
                     horoscopeContent.innerHTML = `
                         <div class="prediction medium">
@@ -1366,7 +1379,7 @@
             }
         }
         
-        async function renderHoroscope(horoscope, ephemeris) {
+        async function renderHoroscope(horoscope, ephemeris, birthday) {
             const horoscopeContent = document.getElementById('horoscopeContent');
             const orreryContainer = document.getElementById('orreryContainer');
             const orreryLegend = document.getElementById('orreryLegend');
@@ -1421,6 +1434,8 @@
                         <small>Confidence: ${Math.round(pred.confidence * 100)}%</small>
                     </div>
                 `).join('')}
+                
+                ${horoscope.developer_insights ? generateDeveloperInsights(horoscope.developer_insights, birthday) : ''}
             `;
             
             // Show and update the orrery with ephemeris data
@@ -1590,6 +1605,65 @@
             
             // Render the demo horoscope with orrery
             renderHoroscope(mockHoroscope, mockEphemeris);
+        }
+        
+        function generateDeveloperInsights(insights, birthday) {
+            if (!insights) return '';
+            
+            const outlookEmoji = {
+                'favorable': '✨',
+                'challenging': '⚡',
+                'mixed': '🌗',
+                'neutral': '⚪'
+            };
+            
+            return `
+                <div style="margin: 30px 0; padding: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 15px;">
+                    <h3 style="text-align: center; color: #ffd700; margin-bottom: 25px;">
+                        ${birthday ? '🎂 Your Personal Developer Forecast' : '💻 Developer Forecast'}
+                    </h3>
+                    
+                    <!-- Code Deployment Forecast -->
+                    <div class="prediction ${insights.deployment_forecast.overall_outlook}" style="margin-bottom: 20px;">
+                        <h4>${outlookEmoji[insights.deployment_forecast.overall_outlook]} How will your code deploy go today?</h4>
+                        <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <p style="font-style: italic; font-size: 1.1em; margin-bottom: 10px;">"${insights.deployment_forecast.cosmic_message}"</p>
+                        </div>
+                        <div style="margin: 15px 0;">
+                            <strong>Cosmic Recommendations:</strong>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                ${insights.deployment_forecast.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <small>Confidence: ${Math.round(insights.deployment_forecast.confidence * 100)}%</small>
+                    </div>
+                    
+                    <!-- On-Call Rotation Forecast -->
+                    <div class="prediction ${insights.oncall_forecast.overall_outlook}">
+                        <h4>${outlookEmoji[insights.oncall_forecast.overall_outlook]} How will your on-call rotation go today?</h4>
+                        <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <p style="font-style: italic; font-size: 1.1em; margin-bottom: 10px;">"${insights.oncall_forecast.cosmic_message}"</p>
+                        </div>
+                        <div style="margin: 15px 0;">
+                            <strong>Cosmic Recommendations:</strong>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                ${insights.oncall_forecast.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <small>Confidence: ${Math.round(insights.oncall_forecast.confidence * 100)}%</small>
+                    </div>
+                    
+                    ${birthday ? `
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                            <h5 style="color: #ffd700; margin-bottom: 10px;">🌟 Personal Astrological Influence</h5>
+                            <p style="font-size: 0.9em; opacity: 0.9;">
+                                Your birth chart adds personal cosmic influences to today's predictions. 
+                                The planetary positions at your birth interact with today's celestial energies to provide these personalized insights.
+                            </p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
         }
     </script>
 </body>

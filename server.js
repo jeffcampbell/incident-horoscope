@@ -18,7 +18,6 @@ async function initializeDatabase() {
     if (process.env.NODE_ENV === 'production') {
         try {
             const db = require('./config/database');
-            console.log('🔄 Initializing database tables...');
             
             // Check if tables exist, create if they don't
             const tableCheck = await db.query(`
@@ -30,10 +29,7 @@ async function initializeDatabase() {
                 const fs = require('fs');
                 const initSQL = fs.readFileSync('./scripts/init.sql', 'utf8');
                 await db.query(initSQL);
-                console.log('✅ Database tables created');
-            } else {
-                console.log('✅ Database tables already exist');
-            }
+            } 
         } catch (error) {
             console.error('❌ Database initialization error:', error);
         }
