@@ -1189,15 +1189,20 @@
                 // Add a pulsing effect to the selected planet
                 const planet = this.positions[planetName];
                 if (planet) {
+                    // Get the canvas position relative to its container
+                    const canvasRect = this.canvas.getBoundingClientRect();
+                    const containerRect = this.canvas.parentNode.getBoundingClientRect();
+                    
                     // Create a temporary highlight effect
                     const highlightCanvas = document.createElement('canvas');
                     highlightCanvas.width = this.canvas.width;
                     highlightCanvas.height = this.canvas.height;
                     highlightCanvas.style.position = 'absolute';
-                    highlightCanvas.style.top = '0';
-                    highlightCanvas.style.left = '0';
+                    highlightCanvas.style.top = (canvasRect.top - containerRect.top) + 'px';
+                    highlightCanvas.style.left = (canvasRect.left - containerRect.left) + 'px';
                     highlightCanvas.style.pointerEvents = 'none';
                     highlightCanvas.style.borderRadius = '50%';
+                    highlightCanvas.style.zIndex = '100';
                     
                     this.canvas.parentNode.appendChild(highlightCanvas);
                     
@@ -1205,17 +1210,39 @@
                     const body = this.bodies[planetName];
                     
                     let opacity = 1;
+                    let scale = 1;
                     const animate = () => {
                         highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
                         
-                        // Draw pulsing circle around planet
-                        highlightCtx.beginPath();
-                        highlightCtx.arc(planet.x, planet.y, body.size * 3, 0, 2 * Math.PI);
-                        highlightCtx.strokeStyle = `${body.color}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`;
-                        highlightCtx.lineWidth = 3;
-                        highlightCtx.stroke();
+                        // Draw multiple pulsing circles around planet for better effect
+                        for (let i = 0; i < 3; i++) {
+                            const radius = body.size * (2 + i) * scale;
+                            const ringOpacity = opacity * (1 - i * 0.3);
+                            
+                            highlightCtx.beginPath();
+                            highlightCtx.arc(planet.x, planet.y, radius, 0, 2 * Math.PI);
+                            highlightCtx.strokeStyle = `${body.color}${Math.floor(ringOpacity * 255).toString(16).padStart(2, '0')}`;
+                            highlightCtx.lineWidth = 2 - i * 0.5;
+                            highlightCtx.stroke();
+                        }
                         
-                        opacity -= 0.02;
+                        // Add a filled glow effect
+                        const glowGradient = highlightCtx.createRadialGradient(
+                            planet.x, planet.y, 0,
+                            planet.x, planet.y, body.size * 4 * scale
+                        );
+                        glowGradient.addColorStop(0, `${body.color}${Math.floor(opacity * 80).toString(16).padStart(2, '0')}`);
+                        glowGradient.addColorStop(0.5, `${body.color}${Math.floor(opacity * 40).toString(16).padStart(2, '0')}`);
+                        glowGradient.addColorStop(1, 'transparent');
+                        
+                        highlightCtx.fillStyle = glowGradient;
+                        highlightCtx.beginPath();
+                        highlightCtx.arc(planet.x, planet.y, body.size * 4 * scale, 0, 2 * Math.PI);
+                        highlightCtx.fill();
+                        
+                        opacity -= 0.015;
+                        scale += 0.02;
+                        
                         if (opacity > 0) {
                             requestAnimationFrame(animate);
                         } else {
