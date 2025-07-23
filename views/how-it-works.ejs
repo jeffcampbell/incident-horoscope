@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 How It Works - SRE Horoscope Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section h3 {
+            color: #ffd700;
+            margin: 20px 0 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        .section p {
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        
+        .section ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        .section li {
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+        
+        .highlight {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            color: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .navigation {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .nav-button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .architecture-diagram {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .flow-step {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #ffd700;
+        }
+        
+        .flow-step h4 {
+            color: #ffd700;
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔮 How It Works</h1>
+            <p>Understanding the SRE Horoscope Generator</p>
+        </div>
+        
+        <div class="section">
+            <h2>🌟 What Is This?</h2>
+            <p>
+                The SRE Horoscope Generator combines astronomical data 
+                with your deploy pipeline. It generates "cosmic predictions" for how well your on-call rotation will go next week.
+            </p>
+            
+            <div class="warning">
+                <span style="font-size: 1.2rem;">⚠️</span>
+                <div>
+                    <strong>Disclaimer:</strong> This tool is for entertainment purposes only. 
+                    You probably shouldn't make deployment or incident response decisions based on planetary alignments.
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 How Accurate Is This?</h2>
+            <p>
+                The SRE Horoscope Generator is as accurate at predicting incidents as all other industry standard techniques.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ How It Works</h2>
+            
+            <div class="flow-step">
+                <h4>1. 🌌 Astronomical Data Collection</h4>
+                <p>
+                    We fetch real planetary position data from NASA's JPL Horizons system, which provides precise 
+                    coordinates (Right Ascension, Declination, and Distance) for celestial bodies on any given date.
+                </p>
+            </div>
+            
+            <div class="flow-step">
+                <h4>2. 🎨 Stained Glass Orrery Visualization</h4>
+                <p>
+                    The planetary positions are rendered in a stained glass-style orrery (a model of the solar system) 
+                    using HTML5 Canvas. Each planet is positioned based on its actual astronomical coordinates.
+                </p>
+            </div>
+            
+            <div class="flow-step">
+                <h4>4. 📊 Risk Assessment</h4>
+                <p>
+                    Based on the planetary influences, we assign an overall "cosmic risk level" for your operations, 
+                    from favorable conditions to high alert periods requiring extra vigilance.
+                </p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🏗️ Technical Architecture</h2>
+            
+            <div class="architecture-diagram">
+                <pre>
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   NASA JPL      │───▶│   PostgreSQL     │───▶│   Node.js API   │
+│   Horizons API  │    │   Database       │    │   Server        │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                          │
+                                                          ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Stained Glass │◀───│   Frontend       │◀───│   EJS Templates │
+│   Orrery Canvas │    │   Dashboard      │    │   & Styling     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                </pre>
+            </div>
+        Created in VS Code with Github Copilot (Agent/Claude Sonnet 4)
+        </div>
+        
+        <div class="section">
+            <h2>🌍 Data Sources</h2>
+            <p>
+                We use <span class="highlight">NASA's JPL Horizons system</span>, which is the gold standard for 
+                astronomical ephemeris data. This system provides:
+            </p>
+            <p>
+                Learn more about the API in the <a href="https://ssd-api.jpl.nasa.gov/doc/horizons.html" target="_blank" style="color: #ffd700; text-decoration: underline;">official documentation</a>.
+            </p>
+            <ul>
+                <li><strong>High Precision:</strong> Accurate to fractions of an arcsecond</li>
+                <li><strong>Historical Data:</strong> Planetary positions dating back centuries</li>
+                <li><strong>Future Predictions:</strong> Reliable forecasts for years ahead</li>
+                <li><strong>Multiple Bodies:</strong> Sun, Moon, planets, asteroids, and comets</li>
+            </ul>
+            
+            <p>
+                When NASA data is unavailable, we fall back to mathematical approximations based on 
+                orbital mechanics to ensure the tool remains functional.
+            </p>
+        </div>
+        
+        <div class="navigation">
+            <a href="/" class="nav-button">🔮 Back to Horoscope Generator</a>
+        </div>
+    </div>
+</body>
+</html>

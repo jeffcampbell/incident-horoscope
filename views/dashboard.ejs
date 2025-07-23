@@ -244,6 +244,245 @@
             line-height: 1.4;
         }
         
+        /* Stained Glass Orrery Styles */
+        .orrery-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            min-height: 400px;
+            position: relative;
+        }
+        
+        .orrery-canvas {
+            border-radius: 50%;
+            background: radial-gradient(circle at center, 
+                rgba(0, 0, 0, 0.8) 0%, 
+                rgba(25, 25, 112, 0.6) 40%, 
+                rgba(70, 130, 180, 0.4) 70%, 
+                rgba(135, 206, 235, 0.2) 100%);
+            box-shadow: 
+                inset 0 0 50px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(255, 215, 0, 0.3),
+                0 0 60px rgba(255, 215, 0, 0.1);
+            position: relative;
+            overflow: visible;
+        }
+        
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 50%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        
+        .orbit::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1px dashed rgba(255, 215, 0, 0.1);
+            animation: orbit-glow 4s ease-in-out infinite alternate;
+        }
+        
+        @keyframes orbit-glow {
+            0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.2); }
+            100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+        }
+        
+        .celestial-body {
+            position: absolute;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+        
+        .celestial-body:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            z-index: 20;
+            box-shadow: 0 0 20px currentColor;
+        }
+        
+        .celestial-body::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            border-radius: 50%;
+            background: radial-gradient(circle, currentColor 0%, transparent 70%);
+            opacity: 0.3;
+            z-index: -1;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+        
+        /* Individual celestial body styles */
+        .sun { 
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+            color: #FFD700;
+            font-size: 1.2em;
+            width: 30px;
+            height: 30px;
+            animation: sun-rotate 20s linear infinite;
+        }
+        
+        @keyframes sun-rotate {
+            0% { box-shadow: 0 0 15px #FFD700, 0 0 30px #FFA500; }
+            50% { box-shadow: 0 0 25px #FFD700, 0 0 40px #FFA500; }
+            100% { box-shadow: 0 0 15px #FFD700, 0 0 30px #FFA500; }
+        }
+        
+        .mercury { 
+            background: radial-gradient(circle, #87CEEB 0%, #4682B4 100%);
+            color: #87CEEB;
+            width: 12px;
+            height: 12px;
+            font-size: 0.7em;
+        }
+        
+        .venus { 
+            background: radial-gradient(circle, #FFC0CB 0%, #FF69B4 100%);
+            color: #FFC0CB;
+            width: 16px;
+            height: 16px;
+            font-size: 0.8em;
+        }
+        
+        .mars { 
+            background: radial-gradient(circle, #FF4500 0%, #DC143C 100%);
+            color: #FF4500;
+            width: 14px;
+            height: 14px;
+            font-size: 0.7em;
+        }
+        
+        .jupiter { 
+            background: radial-gradient(circle, #DAA520 0%, #B8860B 100%);
+            color: #DAA520;
+            width: 26px;
+            height: 26px;
+            font-size: 1em;
+        }
+        
+        .saturn { 
+            background: radial-gradient(circle, #FAD5A5 0%, #DEB887 100%);
+            color: #FAD5A5;
+            width: 22px;
+            height: 22px;
+            font-size: 0.9em;
+            position: relative;
+        }
+        
+        .saturn::after {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 2px;
+            opacity: 0.6;
+        }
+        
+        .uranus { 
+            background: radial-gradient(circle, #4FD0E3 0%, #3CB371 100%);
+            color: #4FD0E3;
+            width: 18px;
+            height: 18px;
+            font-size: 0.8em;
+        }
+        
+        .neptune { 
+            background: radial-gradient(circle, #4169E1 0%, #0000CD 100%);
+            color: #4169E1;
+            width: 18px;
+            height: 18px;
+            font-size: 0.8em;
+        }
+        
+        .moon { 
+            background: radial-gradient(circle, #C0C0C0 0%, #808080 100%);
+            color: #C0C0C0;
+            width: 10px;
+            height: 10px;
+            font-size: 0.6em;
+        }
+        
+        .planet-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 1000;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .planet-tooltip.visible {
+            opacity: 1;
+        }
+        
+        .planet-tooltip h4 {
+            margin: 0 0 4px 0;
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+        
+        .planet-tooltip p {
+            margin: 2px 0;
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+        
+        .orrery-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
         .loading-spinner {
             display: none;
             text-align: center;
@@ -314,6 +553,30 @@
             line-height: 1.6;
             font-size: 0.95rem;
             margin: 0;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .footer-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateY(-1px);
         }
         
         @media (max-width: 768px) {
@@ -388,8 +651,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔮 Planetary Horoscope for SRE Teams</h1>
-            <p>Cosmic insights for software incident response and operations</p>
+            <h1>🔮 SRE Horoscope Generator</h1>
+            <p>Cosmic insights for deploys and incident response</p>
         </div>
         
         <!-- Horoscope Section - Main focus -->
@@ -405,7 +668,6 @@
                 <div class="control-group">
                     <div class="button-group">
                         <button onclick="generateHoroscope('today')">🔮 Today's Horoscope</button>
-                        <button onclick="showPlanetaryPositions()">🌎 Current Planetary Positions</button>
                     </div>
                 </div>
             </div>
@@ -417,6 +679,17 @@
             
             <div class="card horoscope-card" id="horoscope" style="display: none;">
                 <h3 id="horoscopeTitle">🔮 Planetary Horoscope</h3>
+                
+                <!-- Stained Glass Orrery -->
+                <div class="orrery-container" id="orreryContainer" style="display: none;">
+                    <canvas id="orreryCanvas" class="orrery-canvas" width="380" height="380"></canvas>
+                    <div class="planet-tooltip" id="planetTooltip"></div>
+                </div>
+                
+                <div class="orrery-legend" id="orreryLegend" style="display: none;">
+                    <!-- Legend will be populated by JavaScript -->
+                </div>
+                
                 <div id="horoscopeContent">
                     <!-- Horoscope content will be loaded here -->
                 </div>
@@ -424,6 +697,17 @@
             
             <div class="card" id="planetaryPositions" style="display: none;">
                 <h3>🌌 Current Planetary Positions</h3>
+                
+                <!-- Stained Glass Orrery for Current Positions -->
+                <div class="orrery-container" id="currentOrreryContainer" style="display: none;">
+                    <canvas id="currentOrreryCanvas" class="orrery-canvas" width="380" height="380"></canvas>
+                    <div class="planet-tooltip" id="currentPlanetTooltip"></div>
+                </div>
+                
+                <div class="orrery-legend" id="currentOrreryLegend" style="display: none;">
+                    <!-- Legend will be populated by JavaScript -->
+                </div>
+                
                 <div class="planetary-positions" id="planetaryGrid">
                     <!-- Planetary positions will be loaded here -->
                 </div>
@@ -432,7 +716,7 @@
         
         <!-- Planetary Knowledge Base -->
         <div class="card">
-            <h3>🌟 Planetary Influences for Software Teams</h3>
+            <h3>🌟 Guide to Planetary Influences</h3>
             <div class="planetary-knowledge" id="planetaryKnowledge">
                 <div class="knowledge-grid">
                     <div class="planet-knowledge-card">
@@ -466,14 +750,292 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <button onclick="window.location.href='/how-it-works'" class="footer-button">
+                ❓ How does this work?
+            </button>
+        </div>
     </div>
 
     <script>
+        // Stained Glass Orrery Implementation
+        class StainedGlassOrrery {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.centerX = this.canvas.width / 2;
+                this.centerY = this.canvas.height / 2;
+                this.tooltip = null; // Will be set later for each instance
+                
+                // Celestial body configuration
+                this.bodies = {
+                    sun: { name: 'Sun', symbol: '☉', color: '#FFD700', size: 15, orbit: 0 },
+                    mercury: { name: 'Mercury', symbol: '☿', color: '#87CEEB', size: 6, orbit: 40 },
+                    venus: { name: 'Venus', symbol: '♀', color: '#FFC0CB', size: 8, orbit: 55 },
+                    mars: { name: 'Mars', symbol: '♂', color: '#FF4500', size: 7, orbit: 85 },
+                    jupiter: { name: 'Jupiter', symbol: '♃', color: '#DAA520', size: 13, orbit: 120 },
+                    saturn: { name: 'Saturn', symbol: '♄', color: '#FAD5A5', size: 11, orbit: 145 },
+                    uranus: { name: 'Uranus', symbol: '♅', color: '#4FD0E3', size: 9, orbit: 165 },
+                    neptune: { name: 'Neptune', symbol: '♆', color: '#4169E1', size: 9, orbit: 180 },
+                    moon: { name: 'Moon', symbol: '☽', color: '#C0C0C0', size: 5, orbit: 30 }
+                };
+                
+                this.positions = {};
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseleave', () => this.hideTooltip());
+            }
+            
+            calculatePosition(ra, distance, bodyName) {
+                // Convert RA (right ascension) to angle, accounting for orbital radius
+                const angle = (ra * Math.PI) / 180;
+                const orbitRadius = this.bodies[bodyName].orbit;
+                
+                // For the moon, make it orbit around Earth's position instead of center
+                if (bodyName === 'moon' && this.positions.earth) {
+                    const x = this.positions.earth.x + (orbitRadius * 0.5) * Math.cos(angle);
+                    const y = this.positions.earth.y + (orbitRadius * 0.5) * Math.sin(angle);
+                    return { x, y };
+                }
+                
+                // Calculate position relative to center
+                const x = this.centerX + orbitRadius * Math.cos(angle);
+                const y = this.centerY + orbitRadius * Math.sin(angle);
+                
+                return { x, y };
+            }
+            
+            drawStainedGlassBackground() {
+                // Create stained glass effect with radial segments
+                const segments = 12;
+                const colors = ['#1e3c72', '#2a5298', '#667eea', '#764ba2'];
+                
+                for (let i = 0; i < segments; i++) {
+                    const startAngle = (i * 2 * Math.PI) / segments;
+                    const endAngle = ((i + 1) * 2 * Math.PI) / segments;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.centerX, this.centerY);
+                    this.ctx.arc(this.centerX, this.centerY, 190, startAngle, endAngle);
+                    this.ctx.closePath();
+                    
+                    const gradient = this.ctx.createRadialGradient(
+                        this.centerX, this.centerY, 0,
+                        this.centerX, this.centerY, 190
+                    );
+                    gradient.addColorStop(0, colors[i % colors.length] + '80');
+                    gradient.addColorStop(1, colors[i % colors.length] + '20');
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fill();
+                    
+                    // Add stained glass borders
+                    this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                }
+            }
+            
+            drawOrbits() {
+                Object.keys(this.bodies).forEach(bodyName => {
+                    if (bodyName === 'sun' || bodyName === 'moon') return;
+                    
+                    const orbit = this.bodies[bodyName].orbit;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.centerX, this.centerY, orbit, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                });
+            }
+            
+            drawCelestialBody(bodyName, position, data) {
+                const body = this.bodies[bodyName];
+                const { x, y } = position;
+                
+                // Create glow effect
+                const glowGradient = this.ctx.createRadialGradient(x, y, 0, x, y, body.size * 2);
+                glowGradient.addColorStop(0, body.color + 'AA');
+                glowGradient.addColorStop(0.5, body.color + '44');
+                glowGradient.addColorStop(1, 'transparent');
+                
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, body.size * 2, 0, 2 * Math.PI);
+                this.ctx.fillStyle = glowGradient;
+                this.ctx.fill();
+                
+                // Draw the planet body
+                const bodyGradient = this.ctx.createRadialGradient(
+                    x - body.size * 0.3, y - body.size * 0.3, 0,
+                    x, y, body.size
+                );
+                bodyGradient.addColorStop(0, body.color);
+                bodyGradient.addColorStop(1, this.darkenColor(body.color, 0.4));
+                
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, body.size, 0, 2 * Math.PI);
+                this.ctx.fillStyle = bodyGradient;
+                this.ctx.fill();
+                
+                // Add border
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+                
+                // Draw symbol
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = `${Math.max(8, body.size * 0.8)}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                this.ctx.shadowBlur = 2;
+                this.ctx.fillText(body.symbol, x, y);
+                this.ctx.shadowBlur = 0;
+                
+                // Special effect for Saturn's rings
+                if (bodyName === 'saturn') {
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(x, y, body.size * 1.5, body.size * 0.3, 0, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = body.color + '80';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+            }
+            
+            darkenColor(color, factor) {
+                const hex = color.replace('#', '');
+                const r = Math.max(0, parseInt(hex.substr(0, 2), 16) * (1 - factor));
+                const g = Math.max(0, parseInt(hex.substr(2, 2), 16) * (1 - factor));
+                const b = Math.max(0, parseInt(hex.substr(4, 2), 16) * (1 - factor));
+                
+                return `rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)})`;
+            }
+            
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                let hoveredBody = null;
+                let hoveredData = null;
+                
+                Object.keys(this.positions).forEach(bodyName => {
+                    const position = this.positions[bodyName];
+                    const body = this.bodies[bodyName];
+                    const distance = Math.sqrt(
+                        Math.pow(mouseX - position.x, 2) + Math.pow(mouseY - position.y, 2)
+                    );
+                    
+                    if (distance <= body.size + 5) {
+                        hoveredBody = bodyName;
+                        hoveredData = position.data;
+                    }
+                });
+                
+                if (hoveredBody) {
+                    this.showTooltip(hoveredBody, hoveredData, e.clientX, e.clientY);
+                } else {
+                    this.hideTooltip();
+                }
+            }
+            
+            showTooltip(bodyName, data, x, y) {
+                if (!this.tooltip) return;
+                
+                const body = this.bodies[bodyName];
+                this.tooltip.innerHTML = `
+                    <h4>${body.symbol} ${body.name}</h4>
+                    <p>RA: ${data?.ra?.toFixed(2)}°</p>
+                    <p>Dec: ${data?.dec?.toFixed(2)}°</p>
+                    <p>Distance: ${data?.distance?.toFixed(2)} AU</p>
+                `;
+                
+                this.tooltip.style.left = x + 10 + 'px';
+                this.tooltip.style.top = y - 10 + 'px';
+                this.tooltip.classList.add('visible');
+            }
+            
+            hideTooltip() {
+                if (this.tooltip) {
+                    this.tooltip.classList.remove('visible');
+                }
+            }
+            
+            updateOrrery(ephemerisData) {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw stained glass background
+                this.drawStainedGlassBackground();
+                
+                // Draw orbits
+                this.drawOrbits();
+                
+                // Calculate positions for all bodies
+                this.positions = {};
+                
+                Object.keys(this.bodies).forEach(bodyName => {
+                    const ra = ephemerisData[`${bodyName}_ra`];
+                    const dec = ephemerisData[`${bodyName}_dec`];
+                    const distance = ephemerisData[`${bodyName}_distance`];
+                    
+                    if (ra !== null && ra !== undefined) {
+                        const position = this.calculatePosition(ra, distance, bodyName);
+                        position.data = { ra, dec, distance };
+                        this.positions[bodyName] = position;
+                    }
+                });
+                
+                // Draw all celestial bodies (sun first, then others)
+                const drawOrder = ['sun', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'moon'];
+                drawOrder.forEach(bodyName => {
+                    if (this.positions[bodyName]) {
+                        this.drawCelestialBody(bodyName, this.positions[bodyName], this.positions[bodyName].data);
+                    }
+                });
+                
+                // Update legend
+                this.updateLegend();
+            }
+            
+            updateLegend(legendId = 'orreryLegend') {
+                const legend = document.getElementById(legendId);
+                if (legend) {
+                    legend.innerHTML = Object.keys(this.bodies).map(bodyName => {
+                        const body = this.bodies[bodyName];
+                        return `
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: ${body.color}; box-shadow: 0 0 8px ${body.color}"></div>
+                                <span>${body.symbol} ${body.name}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+        
+        // Initialize orrery
+        let orrery = null;
+        let currentOrrery = null;
+        
         // Initialize dashboard on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Set today's date for horoscope
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('horoscopeDate').value = today;
+            
+            // Initialize orreries
+            orrery = new StainedGlassOrrery('orreryCanvas');
+            orrery.tooltip = document.getElementById('planetTooltip');
+            
+            currentOrrery = new StainedGlassOrrery('currentOrreryCanvas');
+            currentOrrery.tooltip = document.getElementById('currentPlanetTooltip');
         });
         
         async function generateHoroscope(dateType = 'custom') {
@@ -568,6 +1130,8 @@
         
         async function renderHoroscope(horoscope, ephemeris) {
             const horoscopeContent = document.getElementById('horoscopeContent');
+            const orreryContainer = document.getElementById('orreryContainer');
+            const orreryLegend = document.getElementById('orreryLegend');
             
             const riskLevelEmoji = {
                 high: '🔴',
@@ -639,6 +1203,44 @@
             `;
         }
         
+        function generatePlanetaryGrid(ephemeris) {
+            // Convert ephemeris data to a simple grid display
+            const celestialBodies = {
+                sun: { name: 'Sun', symbol: '☉' },
+                mercury: { name: 'Mercury', symbol: '☿' },
+                venus: { name: 'Venus', symbol: '♀' },
+                mars: { name: 'Mars', symbol: '♂' },
+                jupiter: { name: 'Jupiter', symbol: '♃' },
+                saturn: { name: 'Saturn', symbol: '♄' },
+                uranus: { name: 'Uranus', symbol: '♅' },
+                neptune: { name: 'Neptune', symbol: '♆' },
+                moon: { name: 'Moon', symbol: '☽' }
+            };
+            
+            return `
+                <h4 style="margin-bottom: 15px;">🌌 Current Planetary Positions</h4>
+                <div class="planetary-positions">
+                    ${Object.keys(celestialBodies).map(bodyName => {
+                        const body = celestialBodies[bodyName];
+                        const ra = ephemeris[`${bodyName}_ra`];
+                        const dec = ephemeris[`${bodyName}_dec`];
+                        const distance = ephemeris[`${bodyName}_distance`];
+                        
+                        if (ra !== null && ra !== undefined) {
+                            return `
+                                <div class="planet-card">
+                                    <div class="planet-name">${body.symbol} ${body.name}</div>
+                                    <div class="planet-sign">RA: ${ra.toFixed(2)}°</div>
+                                    <div class="planet-influence">Dec: ${dec.toFixed(2)}°, Dist: ${distance.toFixed(2)} AU</div>
+                                </div>
+                            `;
+                        }
+                        return '';
+                    }).filter(Boolean).join('')}
+                </div>
+            `;
+        }
+        
         async function showPlanetaryPositions() {
             const planetaryCard = document.getElementById('planetaryPositions');
             const planetaryGrid = document.getElementById('planetaryGrid');
@@ -680,9 +1282,8 @@
                                 </div>
                             </div>
                         `;
-                    }
-                    
-                    planetaryGrid.innerHTML = dataWarning + generatePlanetaryInfo(ephemeris);
+                    }                    
+                    planetaryGrid.innerHTML = dataWarning + generatePlanetaryGrid(ephemeris);
                 } else {
                     planetaryGrid.innerHTML = `
                         <div class="error">
@@ -700,6 +1301,60 @@
                     </div>
                 `;
             }
+        }
+        
+        function demonstrateOrrery() {
+            // Create mock ephemeris data for demonstration
+            const mockEphemeris = {
+                date: new Date().toISOString().split('T')[0],
+                location: 'Demo Location',
+                sun_ra: 180.0, sun_dec: 0.0, sun_distance: 1.0,
+                mercury_ra: 200.5, mercury_dec: -5.2, mercury_distance: 0.39,
+                venus_ra: 150.8, venus_dec: 12.3, venus_distance: 0.72,
+                mars_ra: 45.2, mars_dec: 15.7, mars_distance: 1.52,
+                jupiter_ra: 300.1, jupiter_dec: -8.4, jupiter_distance: 5.2,
+                saturn_ra: 75.9, saturn_dec: 22.1, saturn_distance: 9.5,
+                uranus_ra: 120.4, uranus_dec: -1.8, uranus_distance: 19.2,
+                neptune_ra: 260.7, neptune_dec: -9.1, neptune_distance: 30.1,
+                moon_ra: 95.3, moon_dec: 18.5, moon_distance: 0.002569
+            };
+            
+            const mockHoroscope = {
+                overall_risk_level: 'medium',
+                cosmic_advice: 'The celestial bodies are in harmonious alignment, favoring creative solutions and team collaboration.',
+                predictions: [
+                    {
+                        planet: 'Mercury',
+                        category: 'communication',
+                        level: 'positive',
+                        message: 'Clear communication channels support smooth deployments and minimal misconfiguration risks.',
+                        confidence: 0.85
+                    },
+                    {
+                        planet: 'Mars',
+                        category: 'incident_response',
+                        level: 'medium',
+                        message: 'Moderate potential for system conflicts. Recommend enhanced monitoring during peak hours.',
+                        confidence: 0.72
+                    }
+                ],
+                planetary_summary: [
+                    { name: 'Sun', symbol: '☉', sign: 'Capricorn', domain: 'System Leadership', influence_strength: 'high' },
+                    { name: 'Mercury', symbol: '☿', sign: 'Aquarius', domain: 'Communications', influence_strength: 'medium' },
+                    { name: 'Venus', symbol: '♀', sign: 'Sagittarius', domain: 'Team Harmony', influence_strength: 'high' },
+                    { name: 'Mars', symbol: '♂', sign: 'Pisces', domain: 'Incident Response', influence_strength: 'medium' }
+                ]
+            };
+            
+            // Show horoscope card
+            const horoscopeCard = document.getElementById('horoscope');
+            const horoscopeTitle = document.getElementById('horoscopeTitle');
+            
+            horoscopeCard.style.display = 'block';
+            horoscopeTitle.textContent = '✨ Demo: Stained Glass Orrery';
+            
+            // Render the demo horoscope with orrery
+            renderHoroscope(mockHoroscope, mockEphemeris);
         }
     </script>
 </body>
