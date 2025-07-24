@@ -1271,34 +1271,74 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('horoscopeDate').value = today;
             
-            // Initialize orreries
-            orrery = new StainedGlassOrrery('orreryCanvas');
-            orrery.tooltip = document.getElementById('planetTooltip');
+            // Initialize orreries only if canvas elements exist
+            const orreryCanvas = document.getElementById('orreryCanvas');
+            const currentOrreryCanvas = document.getElementById('currentOrreryCanvas');
             
-            currentOrrery = new StainedGlassOrrery('currentOrreryCanvas');
-            currentOrrery.tooltip = document.getElementById('currentPlanetTooltip');
+            if (orreryCanvas) {
+                orrery = new StainedGlassOrrery('orreryCanvas');
+                orrery.tooltip = document.getElementById('planetTooltip');
+            }
+            
+            if (currentOrreryCanvas) {
+                currentOrrery = new StainedGlassOrrery('currentOrreryCanvas');
+                currentOrrery.tooltip = document.getElementById('currentPlanetTooltip');
+            }
             
             // Check for date parameter in URL (from calendar clicks)
             const urlParams = new URLSearchParams(window.location.search);
             const dateParam = urlParams.get('date');
             
             if (dateParam) {
-                console.log('Date parameter found:', dateParam);
+                // Validate the date format (YYYY-MM-DD)
+                const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                const isValidFormat = dateRegex.test(dateParam);
+                
+                if (!isValidFormat) {
+                    showPlanetaryPositions();
+                    return;
+                }
+                
                 // Set the date input to the selected date
                 document.getElementById('horoscopeDate').value = dateParam;
                 
+                // Show the horoscope card immediately
+                const horoscopeCard = document.getElementById('horoscope');
+                horoscopeCard.style.display = 'block';
+                
+                // Show loading message
+                const horoscopeContent = document.getElementById('horoscopeContent');
+                horoscopeContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #ffd700;">🔮 Auto-generating horoscope from calendar selection...</div>';
+                
+                // Initialize main orrery now that the container is visible
+                if (!orrery && orreryCanvas) {
+                    orrery = new StainedGlassOrrery('orreryCanvas');
+                    orrery.tooltip = document.getElementById('planetTooltip');
+                }
+                
                 // Automatically generate horoscope for the selected date
                 setTimeout(() => {
-                    console.log('Auto-generating horoscope for:', dateParam);
-                    generateHoroscope().then(() => {
+                    generateHoroscope('custom').then(() => {
                         // Scroll to horoscope section if hash is present
                         if (window.location.hash === '#horoscope') {
-                            document.getElementById('horoscope').scrollIntoView({ behavior: 'smooth' });
+                            setTimeout(() => {
+                                document.getElementById('horoscope').scrollIntoView({ 
+                                    behavior: 'smooth',
+                                    block: 'start'
+                                });
+                            }, 500);
                         }
                     }).catch(error => {
-                        console.error('Error auto-generating horoscope:', error);
+                        const horoscopeContent = document.getElementById('horoscopeContent');
+                        horoscopeContent.innerHTML = `
+                            <div class="error">
+                                <h4>🌙 Auto-generation Failed</h4>
+                                <p>Error: ${error.message}</p>
+                                <p>Please try clicking the "Generate Horoscope" button manually.</p>
+                            </div>
+                        `;
                     });
-                }, 500); // Increased delay to ensure DOM is ready
+                }, 1500);
             } else {
                 // Show current planetary positions on page load
                 showPlanetaryPositions();
@@ -1322,7 +1362,7 @@
                 targetDate = document.getElementById('horoscopeDate').value;
                 if (!targetDate) {
                     alert('Please select a date for the horoscope');
-                    return;
+                    return Promise.reject(new Error('No date selected'));
                 }
                 
                 // Fix timezone issue by creating date properly
@@ -1391,6 +1431,8 @@
                         </div>
                     `;
                 }
+                
+                return Promise.resolve(); // Explicitly return success
             } catch (error) {
                 console.error('Error generating horoscope:', error);
                 horoscopeContent.innerHTML = `
@@ -1399,6 +1441,7 @@
                         <p>Unable to consult the celestial bodies at this time. Error: ${error.message}</p>
                     </div>
                 `;
+                return Promise.reject(error); // Explicitly return error
             } finally {
                 horoscopeLoading.style.display = 'none';
             }
