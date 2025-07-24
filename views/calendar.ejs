@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📅 Cosmic Risk Calendar - SRE Horoscope Generator</title>
+    <link rel="icon" href="/path-to-crystal-ball-icon.ico" type="image/x-icon">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .calendar-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .month-nav {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .nav-button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .current-month {
+            font-size: 1.5rem;
+            font-weight: bold;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        .calendar-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            max-width: 100%;
+        }
+        
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+        
+        .day-header {
+            text-align: center;
+            font-weight: bold;
+            padding: 15px 10px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 80px;
+            padding: 8px;
+        }
+        
+        .calendar-day:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+        
+        .day-number {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .risk-symbol {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+        
+        .risk-level {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            opacity: 0.9;
+        }
+        
+        /* Risk level colors */
+        .risk-high {
+            background: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+            color: white;
+        }
+        
+        .risk-medium {
+            background: linear-gradient(135deg, #ffa502 0%, #ff6348 100%);
+            color: white;
+        }
+        
+        .risk-normal {
+            background: linear-gradient(135deg, #70a1ff 0%, #5352ed 100%);
+            color: white;
+        }
+        
+        .risk-favorable {
+            background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
+            color: white;
+        }
+        
+        .risk-unknown {
+            background: linear-gradient(135deg, #a4b0be 0%, #747d8c 100%);
+            color: white;
+        }
+        
+        .other-month {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .today {
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .legend-text {
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #ffd700;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .navigation {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .nav-link {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 10px;
+        }
+        
+        .nav-link:hover {
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .calendar-day {
+                min-height: 60px;
+                padding: 4px;
+            }
+            
+            .day-number {
+                font-size: 1rem;
+            }
+            
+            .risk-symbol {
+                font-size: 1rem;
+            }
+            
+            .risk-level {
+                font-size: 0.6rem;
+            }
+            
+            .calendar-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 SRE Cosmic Risk Calendar</h1>
+            <p>Cosmic risk predictions for operations and deployments</p>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #ff4757 0%, #c44569 100%);"></div>
+                <div class="legend-text">
+                    <strong>High Risk</strong><br>
+                    Extra vigilance recommended
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #ffa502 0%, #ff6348 100%);"></div>
+                <div class="legend-text">
+                    <strong>Medium Risk</strong><br>
+                    Standard caution advised
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #70a1ff 0%, #5352ed 100%);"></div>
+                <div class="legend-text">
+                    <strong>Normal</strong><br>
+                    Typical operational day
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);"></div>
+                <div class="legend-text">
+                    <strong>Favorable</strong><br>
+                    Excellent for deployments
+                </div>
+            </div>
+        </div>
+        
+        <div class="calendar-controls">
+            <div class="month-nav">
+                <button class="nav-button" onclick="changeMonth(-1)">← Previous</button>
+                <div class="current-month" id="currentMonth"></div>
+                <button class="nav-button" onclick="changeMonth(1)">Next →</button>
+            </div>
+        </div>
+        
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <div class="day-header">Sun</div>
+                <div class="day-header">Mon</div>
+                <div class="day-header">Tue</div>
+                <div class="day-header">Wed</div>
+                <div class="day-header">Thu</div>
+                <div class="day-header">Fri</div>
+                <div class="day-header">Sat</div>
+            </div>
+            
+            <div class="calendar" id="calendar">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading calendar...
+                </div>
+            </div>
+        </div>
+        
+        <div class="navigation">
+            <a href="/" class="nav-link">🔮 Back to Dashboard</a>
+            <a href="/how-it-works" class="nav-link">❓ How It Works</a>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        
+        const riskSymbols = {
+            high: '⚠️',
+            medium: '⚡',
+            normal: '⚪',
+            favorable: '✨',
+            unknown: '❓'
+        };
+        
+        const riskColors = {
+            high: 'risk-high',
+            medium: 'risk-medium', 
+            normal: 'risk-normal',
+            favorable: 'risk-favorable',
+            unknown: 'risk-unknown'
+        };
+        
+        function formatMonth(date) {
+            return date.toLocaleDateString('en-US', { 
+                month: 'long', 
+                year: 'numeric' 
+            });
+        }
+        
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            loadCalendar();
+        }
+        
+        function getDaysInMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        }
+        
+        function getFirstDayOfMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+        }
+        
+        function getLastDayOfPrevMonth(date) {
+            return new Date(date.getFullYear(), date.getMonth(), 0).getDate();
+        }
+        
+        function isToday(date, day) {
+            const today = new Date();
+            return date.getFullYear() === today.getFullYear() &&
+                   date.getMonth() === today.getMonth() &&
+                   day === today.getDate();
+        }
+        
+        function calculateRiskLevel(date) {
+            // Use simple astronomical approximations to estimate risk
+            // Based on day of year, moon phase approximation, and planetary cycles
+            
+            const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+            const year = date.getFullYear();
+            
+            // Approximate moon phase (29.5 day cycle)
+            const moonPhase = (dayOfYear % 29.5) / 29.5;
+            
+            // Approximate Mars cycle (687 days)
+            const marsCycle = ((year * 365 + dayOfYear) % 687) / 687;
+            
+            // Approximate Mercury cycle (88 days) 
+            const mercuryCycle = (dayOfYear % 88) / 88;
+            
+            // Calculate risk based on these cycles
+            let riskScore = 0;
+            
+            // New moon and full moon increase risk
+            if (moonPhase < 0.1 || moonPhase > 0.9 || (moonPhase > 0.4 && moonPhase < 0.6)) {
+                riskScore += 0.3;
+            }
+            
+            // Mars opposition/conjunction periods
+            if (marsCycle > 0.4 && marsCycle < 0.6) {
+                riskScore += 0.4;
+            }
+            
+            // Mercury "retrograde" periods (simplified)
+            if (mercuryCycle > 0.8 || mercuryCycle < 0.2) {
+                riskScore += 0.3;
+            }
+            
+            // Weekend bonus (lower risk)
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                riskScore -= 0.2;
+            }
+            
+            // Friday deployments are risky
+            if (dayOfWeek === 5) {
+                riskScore += 0.2;
+            }
+            
+            // Add some randomness based on date for variety
+            const dateHash = date.getTime() % 1000;
+            riskScore += (dateHash / 1000 - 0.5) * 0.4;
+            
+            // Convert to risk levels
+            if (riskScore > 0.6) return 'high';
+            if (riskScore > 0.2) return 'medium';
+            if (riskScore < -0.3) return 'favorable';
+            return 'normal';
+        }
+        
+        function createCalendarDay(day, isCurrentMonth, date) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            if (!isCurrentMonth) {
+                dayElement.classList.add('other-month');
+            }
+            
+            const dayDate = new Date(date.getFullYear(), date.getMonth(), day);
+            
+            if (isToday(date, day) && isCurrentMonth) {
+                dayElement.classList.add('today');
+            }
+            
+            const riskLevel = isCurrentMonth ? calculateRiskLevel(dayDate) : 'unknown';
+            dayElement.classList.add(riskColors[riskLevel]);
+            
+            dayElement.innerHTML = `
+                <div class="day-number">${day}</div>
+                <div class="risk-symbol">${riskSymbols[riskLevel]}</div>
+                <div class="risk-level">${riskLevel}</div>
+            `;
+            
+            if (isCurrentMonth) {
+                dayElement.addEventListener('click', () => {
+                    const dateStr = dayDate.toISOString().split('T')[0];
+                    window.location.href = `/?date=${dateStr}#horoscope`;
+                });
+            }
+            
+            return dayElement;
+        }
+        
+        function loadCalendar() {
+            const calendar = document.getElementById('calendar');
+            const currentMonthElement = document.getElementById('currentMonth');
+            
+            currentMonthElement.textContent = formatMonth(currentDate);
+            calendar.innerHTML = '';
+            
+            const daysInMonth = getDaysInMonth(currentDate);
+            const firstDay = getFirstDayOfMonth(currentDate);
+            const lastDayPrevMonth = getLastDayOfPrevMonth(currentDate);
+            
+            // Previous month's trailing days
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = lastDayPrevMonth - i;
+                calendar.appendChild(createCalendarDay(day, false, new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)));
+            }
+            
+            // Current month's days
+            for (let day = 1; day <= daysInMonth; day++) {
+                calendar.appendChild(createCalendarDay(day, true, currentDate));
+            }
+            
+            // Next month's leading days
+            const totalCells = calendar.children.length;
+            const remainingCells = 42 - totalCells; // 6 rows × 7 days
+            for (let day = 1; day <= remainingCells; day++) {
+                calendar.appendChild(createCalendarDay(day, false, new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)));
+            }
+        }
+        
+        // Initialize calendar on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCalendar();
+        });
+    </script>
+</body>
+</html>
