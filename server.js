@@ -50,6 +50,11 @@ app.get('/how-it-works', (req, res) => {
     res.render('how-it-works');
 });
 
+// Calendar page
+app.get('/calendar', (req, res) => {
+    res.render('calendar');
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });

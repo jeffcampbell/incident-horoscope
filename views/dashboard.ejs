@@ -849,6 +849,7 @@
                 <div class="control-group">
                     <div class="button-group">
                         <button onclick="generateHoroscope('today')">🔮 Today's Horoscope</button>
+                        <button onclick="window.location.href='/calendar'">📅 Cosmic Risk Calendar</button>
                     </div>
                 </div>
             </div>
@@ -1277,8 +1278,31 @@
             currentOrrery = new StainedGlassOrrery('currentOrreryCanvas');
             currentOrrery.tooltip = document.getElementById('currentPlanetTooltip');
             
-            // Show current planetary positions on page load
-            showPlanetaryPositions();
+            // Check for date parameter in URL (from calendar clicks)
+            const urlParams = new URLSearchParams(window.location.search);
+            const dateParam = urlParams.get('date');
+            
+            if (dateParam) {
+                console.log('Date parameter found:', dateParam);
+                // Set the date input to the selected date
+                document.getElementById('horoscopeDate').value = dateParam;
+                
+                // Automatically generate horoscope for the selected date
+                setTimeout(() => {
+                    console.log('Auto-generating horoscope for:', dateParam);
+                    generateHoroscope().then(() => {
+                        // Scroll to horoscope section if hash is present
+                        if (window.location.hash === '#horoscope') {
+                            document.getElementById('horoscope').scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }).catch(error => {
+                        console.error('Error auto-generating horoscope:', error);
+                    });
+                }, 500); // Increased delay to ensure DOM is ready
+            } else {
+                // Show current planetary positions on page load
+                showPlanetaryPositions();
+            }
         });
         
         async function generateHoroscope(dateType = 'custom') {
