@@ -180,8 +180,10 @@
         }
         
         .other-month {
-            opacity: 0.3;
+            opacity: 0.4;
             pointer-events: none;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
         
         .today {
@@ -263,35 +265,213 @@
             transform: translateY(-2px);
         }
         
+        /* Mobile Styles */
         @media (max-width: 768px) {
             .container {
-                padding: 15px;
+                padding: 10px;
+            }
+            
+            .header {
+                margin-bottom: 20px;
             }
             
             .header h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
+                line-height: 1.2;
+                margin-bottom: 8px;
             }
             
-            .calendar-day {
-                min-height: 60px;
-                padding: 4px;
-            }
-            
-            .day-number {
+            .header p {
                 font-size: 1rem;
             }
             
-            .risk-symbol {
-                font-size: 1rem;
+            .legend {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-bottom: 20px;
             }
             
-            .risk-level {
-                font-size: 0.6rem;
+            .legend-item {
+                padding: 10px 12px;
+                gap: 8px;
+            }
+            
+            .legend-text {
+                font-size: 0.8rem;
+            }
+            
+            .legend-text br {
+                display: none;
             }
             
             .calendar-controls {
                 flex-direction: column;
                 gap: 15px;
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .month-nav {
+                width: 100%;
+                justify-content: space-between;
+                gap: 10px;
+            }
+            
+            .nav-button {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+                flex-shrink: 0;
+            }
+            
+            .current-month {
+                font-size: 1.2rem;
+                min-width: auto;
+                flex: 1;
+                word-break: break-word;
+            }
+            
+            .calendar-container {
+                padding: 15px;
+                margin-bottom: 20px;
+                border-radius: 10px;
+            }
+            
+            .day-header {
+                padding: 8px 4px;
+                font-size: 0.7rem;
+                border-radius: 4px;
+            }
+            
+            .calendar {
+                gap: 1px;
+            }
+            
+            .calendar-day {
+                min-height: 55px;
+                padding: 3px 2px;
+                border-radius: 4px;
+                justify-content: space-between;
+            }
+            
+            .calendar-day:hover {
+                transform: none;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+            
+            .day-number {
+                font-size: 0.85rem;
+                margin-bottom: 1px;
+                line-height: 1;
+            }
+            
+            .risk-symbol {
+                font-size: 0.8rem;
+                margin-bottom: 1px;
+                line-height: 1;
+            }
+            
+            .risk-level {
+                font-size: 0.4rem;
+                line-height: 0.9;
+                text-align: center;
+                word-break: break-word;
+                hyphens: auto;
+                max-width: 100%;
+                overflow: hidden;
+            }
+            
+            .navigation {
+                margin: 20px 0;
+            }
+            
+            .nav-link {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+                margin: 5px 5px;
+                display: block;
+                max-width: 200px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+        
+        /* Extra small mobile devices */
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .calendar-container {
+                padding: 10px;
+            }
+            
+            .calendar-day {
+                min-height: 50px;
+                padding: 2px 1px;
+            }
+            
+            .day-number {
+                font-size: 0.8rem;
+            }
+            
+            .risk-symbol {
+                font-size: 0.75rem;
+            }
+            
+            .risk-level {
+                font-size: 0.35rem;
+                line-height: 0.8;
+            }
+            
+            .day-header {
+                padding: 6px 2px;
+                font-size: 0.65rem;
+            }
+            
+            .current-month {
+                font-size: 1.1rem;
+            }
+            
+            .nav-button {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+            
+            .legend-text {
+                font-size: 0.75rem;
+            }
+        }
+        
+        /* Ultra small devices - prioritize readability */
+        @media (max-width: 360px) {
+            .calendar-day {
+                min-height: 48px;
+                padding: 1px;
+            }
+            
+            .day-number {
+                font-size: 0.75rem;
+            }
+            
+            .risk-symbol {
+                font-size: 0.7rem;
+            }
+            
+            .risk-level {
+                font-size: 0;
+                line-height: 0.7;
+                letter-spacing: -0.5px;
+            }
+            
+            /* Show abbreviated risk levels for ultra small screens */
+            .risk-level:after {
+                content: attr(data-short);
+                font-size: 0.3rem;
+                line-height: 0.7;
             }
         }
     </style>
@@ -479,6 +659,11 @@
             
             if (!isCurrentMonth) {
                 dayElement.classList.add('other-month');
+                // For previous/next month days, show only the day number without risk info
+                dayElement.innerHTML = `
+                    <div class="day-number">${day}</div>
+                `;
+                return dayElement;
             }
             
             const dayDate = new Date(date.getFullYear(), date.getMonth(), day);
@@ -487,21 +672,28 @@
                 dayElement.classList.add('today');
             }
             
-            const riskLevel = isCurrentMonth ? calculateRiskLevel(dayDate) : 'unknown';
+            const riskLevel = calculateRiskLevel(dayDate);
             dayElement.classList.add(riskColors[riskLevel]);
+            
+            // Create abbreviated versions for ultra-small screens
+            const riskAbbreviations = {
+                high: 'HIGH',
+                medium: 'MED',
+                normal: 'NORM',
+                favorable: 'FAV',
+                unknown: '?'
+            };
             
             dayElement.innerHTML = `
                 <div class="day-number">${day}</div>
                 <div class="risk-symbol">${riskSymbols[riskLevel]}</div>
-                <div class="risk-level">${riskLevel}</div>
+                <div class="risk-level" data-short="${riskAbbreviations[riskLevel]}">${riskLevel}</div>
             `;
             
-            if (isCurrentMonth) {
-                dayElement.addEventListener('click', () => {
-                    const dateStr = dayDate.toISOString().split('T')[0];
-                    window.location.href = `/?date=${dateStr}#horoscope`;
-                });
-            }
+            dayElement.addEventListener('click', () => {
+                const dateStr = dayDate.toISOString().split('T')[0];
+                window.location.href = `/?date=${dateStr}#horoscope`;
+            });
             
             return dayElement;
         }
