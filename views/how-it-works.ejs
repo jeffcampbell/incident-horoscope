@@ -212,7 +212,7 @@
             </div>
             
             <div class="flow-step">
-                <h4>4. 📊 Risk Assessment</h4>
+                <h4>3. 📊 Risk Assessment</h4>
                 <p>
                     Based on the planetary influences, we assign an overall "cosmic risk level" for your operations, 
                     from favorable conditions to high alert periods requiring extra vigilance.
@@ -221,21 +221,35 @@
         </div>
         
         <div class="section">
-            <h2>🏗️ Technical Architecture</h2>
+            <h2>📅 Calendar vs. Daily Horoscope</h2>
             
-            <div class="architecture-diagram">
-                <pre>
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   NASA JPL      │───▶│   PostgreSQL     │───▶│   Node.js API   │
-│   Horizons API  │    │   Database       │    │   Server        │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                                          │
-                                                          ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Stained Glass │◀───│   Frontend       │◀───│   EJS Templates │
-│   Orrery Canvas │    │   Dashboard      │    │   & Styling     │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                </pre>
+            <p>
+                The <span class="highlight">calendar view</span> and <span class="highlight">daily horoscope</span> 
+                use different approaches to calculate cosmic risk levels:
+            </p>
+            
+            <div class="flow-step">
+                <h4>🔮 Daily Horoscope - High Precision</h4>
+                <p>
+                    The main horoscope generator fetches real-time astronomical data from NASA's JPL Horizons API 
+                    for the specific date you request. This provides the most accurate planetary positions and 
+                    detailed cosmic insights with personalized recommendations.
+                </p>
+            </div>
+            
+            <div class="flow-step">
+                <h4>📅 Calendar View - Optimized Performance</h4>
+                <p>
+                    The calendar uses mathematical approximations of astronomical cycles to avoid making dozens 
+                    of API calls to NASA when displaying a full month. While less precise than the daily horoscope, 
+                    it provides a quick overview of cosmic trends using:
+                </p>
+                <ul>
+                    <li><strong>Moon Phase Cycles:</strong> 29.5-day lunar patterns</li>
+                    <li><strong>Planetary Approximations:</strong> Simplified orbital mechanics</li>
+                    <li><strong>Day-of-Week Factors:</strong> Weekend bonuses and Friday deployment risks</li>
+                    <li><strong>Deterministic Patterns:</strong> Consistent results for each date</li>
+                </ul>
             </div>
         </div>
         
