@@ -163,6 +163,33 @@
             transform: translateY(0);
         }
         
+        .copy-link-button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.85rem;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .copy-link-button:hover {
+            background: linear-gradient(45deg, #feca57, #ff6b6b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .copy-link-button:active {
+            transform: translateY(0);
+        }
+        
         .horoscope-card {
             grid-column: 1 / -1;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1536,10 +1563,7 @@
                 
                 <div style="text-align: center; margin: 20px 0;">
                     <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                        <button onclick="shareHoroscope('${shareURL}')" class="share-button" title="Share this horoscope">
-                            🔗 Share This Horoscope
-                        </button>
-                        <button onclick="copyShareURL('${shareURL}')" class="share-button" title="Copy link to clipboard">
+                        <button onclick="copyShareURL('${shareURL}')" class="copy-link-button" title="Copy link to clipboard">
                             📋 Copy Link
                         </button>
                     </div>
@@ -1807,30 +1831,6 @@
             }
             
             return `${baseURL}?${params.toString()}`;
-        }
-        
-        async function shareHoroscope(shareURL) {
-            const shareData = {
-                title: '🔮 My Cosmic SRE Horoscope',
-                text: 'Check out my personalized horoscope for site reliability engineering!',
-                url: shareURL
-            };
-            
-            try {
-                if (navigator.share) {
-                    await navigator.share(shareData);
-                    showShareStatus('Shared successfully! 🚀', 'success');
-                } else {
-                    // Fallback to copying to clipboard
-                    await copyShareURL(shareURL);
-                }
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error('Error sharing:', error);
-                    showShareStatus('Unable to share. Link copied to clipboard instead.', 'warning');
-                    await copyShareURL(shareURL);
-                }
-            }
         }
         
         async function copyShareURL(shareURL) {
