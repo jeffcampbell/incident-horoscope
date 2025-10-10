@@ -136,6 +136,33 @@
             transform: translateY(-2px);
         }
         
+        .share-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.85rem;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .share-button:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .share-button:active {
+            transform: translateY(0);
+        }
+        
         .horoscope-card {
             grid-column: 1 / -1;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1285,9 +1312,10 @@
                 currentOrrery.tooltip = document.getElementById('currentPlanetTooltip');
             }
             
-            // Check for date parameter in URL (from calendar clicks)
+            // Check for URL parameters for sharing
             const urlParams = new URLSearchParams(window.location.search);
             const dateParam = urlParams.get('date');
+            const birthdayParam = urlParams.get('birthday');
             
             if (dateParam) {
                 // Validate the date format (YYYY-MM-DD)
@@ -1302,13 +1330,27 @@
                 // Set the date input to the selected date
                 document.getElementById('horoscopeDate').value = dateParam;
                 
+                // Set birthday if provided
+                if (birthdayParam && dateRegex.test(birthdayParam)) {
+                    document.getElementById('userBirthday').value = birthdayParam;
+                }
+                
+                // Update page title to indicate shared horoscope
+                const dateParts = dateParam.split('-');
+                const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                document.title = `🔮 Shared SRE Horoscope - ${dateObj.toLocaleDateString()}`;
+                
+                // Add visual indicator in header
+                const header = document.querySelector('.header p');
+                header.innerHTML = `Cosmic insights for code deploys and incident response<br><small style="color: #ffd700;">📤 Viewing shared horoscope for ${dateObj.toLocaleDateString()}</small>`;
+                
                 // Show the horoscope card immediately
                 const horoscopeCard = document.getElementById('horoscope');
                 horoscopeCard.style.display = 'block';
                 
                 // Show loading message
                 const horoscopeContent = document.getElementById('horoscopeContent');
-                horoscopeContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #ffd700;">🔮 Auto-generating horoscope from calendar selection...</div>';
+                horoscopeContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #ffd700;">🔮 Loading shared horoscope...</div>';
                 
                 // Initialize main orrery now that the container is visible
                 if (!orrery && orreryCanvas) {
@@ -1316,29 +1358,28 @@
                     orrery.tooltip = document.getElementById('planetTooltip');
                 }
                 
-                // Automatically generate horoscope for the selected date
+                // Automatically generate horoscope for the shared parameters
                 setTimeout(() => {
                     generateHoroscope('custom').then(() => {
-                        // Scroll to horoscope section if hash is present
-                        if (window.location.hash === '#horoscope') {
-                            setTimeout(() => {
-                                document.getElementById('horoscope').scrollIntoView({ 
-                                    behavior: 'smooth',
-                                    block: 'start'
-                                });
-                            }, 500);
-                        }
+                        // Scroll to horoscope section
+                        setTimeout(() => {
+                            document.getElementById('horoscope').scrollIntoView({ 
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }, 500);
                     }).catch(error => {
+                        console.error('Error loading shared horoscope:', error);
                         const horoscopeContent = document.getElementById('horoscopeContent');
                         horoscopeContent.innerHTML = `
                             <div class="error">
-                                <h4>🌙 Auto-generation Failed</h4>
-                                <p>Error: ${error.message}</p>
+                                <h4>🌙 Unable to Load Shared Horoscope</h4>
+                                <p>There was an error loading the horoscope for the shared date.</p>
                                 <p>Please try clicking the "Generate Horoscope" button manually.</p>
                             </div>
                         `;
                     });
-                }, 1500);
+                }, 500);
             } else {
                 // Show current planetary positions on page load
                 showPlanetaryPositions();
@@ -1485,8 +1526,26 @@
             // Show planetary positions first
             const planetaryInfo = horoscope.planetary_summary ? generatePlanetaryInfo(horoscope.planetary_summary) : '';
             
+            // Generate share URL
+            const currentDate = document.getElementById('horoscopeDate').value;
+            const currentBirthday = birthday || document.getElementById('userBirthday').value;
+            const shareURL = generateShareURL(currentDate, currentBirthday);
+            
             horoscopeContent.innerHTML = `
                 ${dataWarning}
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                        <button onclick="shareHoroscope('${shareURL}')" class="share-button" title="Share this horoscope">
+                            🔗 Share This Horoscope
+                        </button>
+                        <button onclick="copyShareURL('${shareURL}')" class="share-button" title="Copy link to clipboard">
+                            📋 Copy Link
+                        </button>
+                    </div>
+                    <div id="shareStatus" style="margin-top: 10px; font-size: 0.8rem; opacity: 0.8;"></div>
+                </div>
+                
                 ${planetaryInfo}
                 
                 <div class="prediction ${horoscope.overall_risk_level}">
@@ -1732,6 +1791,70 @@
                     ` : ''}
                 </div>
             `;
+        }
+        
+        // Share functionality
+        function generateShareURL(date, birthday) {
+            const baseURL = window.location.origin + window.location.pathname;
+            const params = new URLSearchParams();
+            
+            if (date) {
+                params.append('date', date);
+            }
+            
+            if (birthday) {
+                params.append('birthday', birthday);
+            }
+            
+            return `${baseURL}?${params.toString()}`;
+        }
+        
+        async function shareHoroscope(shareURL) {
+            const shareData = {
+                title: '🔮 My Cosmic SRE Horoscope',
+                text: 'Check out my personalized horoscope for site reliability engineering!',
+                url: shareURL
+            };
+            
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                    showShareStatus('Shared successfully! 🚀', 'success');
+                } else {
+                    // Fallback to copying to clipboard
+                    await copyShareURL(shareURL);
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Error sharing:', error);
+                    showShareStatus('Unable to share. Link copied to clipboard instead.', 'warning');
+                    await copyShareURL(shareURL);
+                }
+            }
+        }
+        
+        async function copyShareURL(shareURL) {
+            try {
+                await navigator.clipboard.writeText(shareURL);
+                showShareStatus('Link copied to clipboard! 📋', 'success');
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                showShareStatus('Unable to copy link. Please copy manually: ' + shareURL, 'error');
+            }
+        }
+        
+        function showShareStatus(message, type) {
+            const statusElement = document.getElementById('shareStatus');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.style.color = type === 'success' ? '#4CAF50' : 
+                                          type === 'warning' ? '#ffa502' : '#ff4757';
+                
+                // Clear the status after 3 seconds
+                setTimeout(() => {
+                    statusElement.textContent = '';
+                }, 3000);
+            }
         }
     </script>
 </body>
