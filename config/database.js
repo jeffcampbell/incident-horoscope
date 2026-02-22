@@ -88,7 +88,39 @@ async function initializeTables() {
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_planetary_influences_sign ON planetary_influences(sign);
         `);
-        
+
+        // Create incidents table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS incidents (
+                id SERIAL PRIMARY KEY,
+                date DATE NOT NULL,
+                severity VARCHAR(20) NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+                category VARCHAR(50) NOT NULL CHECK (category IN ('deployment', 'infrastructure', 'communication', 'monitoring', 'other')),
+                duration_minutes INTEGER,
+                description TEXT NOT NULL,
+                team_id INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+        `);
+
+        // Create indexes for incidents table
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_incidents_date ON incidents(date);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_incidents_team_id ON incidents(team_id);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_incidents_category ON incidents(category);
+        `);
+
         console.log('✅ Database tables initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database tables:', error);

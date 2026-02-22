@@ -39,6 +39,7 @@ async function initializeDatabase() {
 // Routes
 app.use('/api/ephemeris', require('./routes/ephemeris'));
 app.use('/api/horoscope', require('./routes/horoscope'));
+app.use('/api/incidents', require('./routes/incidents'));
 
 // Main dashboard route
 app.get('/', (req, res) => {
