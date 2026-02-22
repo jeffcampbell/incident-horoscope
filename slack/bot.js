@@ -1,6 +1,28 @@
 const { App, ExpressReceiver } = require('@slack/bolt');
 const db = require('../config/database');
 
+/**
+ * Slack Bot Configuration
+ *
+ * This bot supports two modes:
+ *
+ * 1. SINGLE-WORKSPACE MODE (Development):
+ *    - Set SLACK_BOT_TOKEN environment variable
+ *    - Bot connects to a single workspace
+ *    - No OAuth flow required
+ *    - Simpler for local development and testing
+ *
+ * 2. MULTI-WORKSPACE MODE (Production):
+ *    - Do NOT set SLACK_BOT_TOKEN
+ *    - Uses OAuth flow with installationStore
+ *    - Supports multiple workspace installations
+ *    - Tokens stored in database
+ *    - Requires SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, SLACK_STATE_SECRET
+ */
+
+// Determine mode based on SLACK_BOT_TOKEN presence
+const isSingleWorkspaceMode = !!process.env.SLACK_BOT_TOKEN;
+
 // Create Express receiver to integrate with existing Express app
 const receiver = new ExpressReceiver({
     signingSecret: process.env.SLACK_SIGNING_SECRET,
@@ -102,12 +124,18 @@ const receiver = new ExpressReceiver({
 });
 
 // Create Slack Bolt app
+// In single-workspace mode, provide token directly
+// In multi-workspace mode, token comes from installationStore
 const app = new App({
     receiver,
-    // For development, you can use a single bot token
-    // For production with OAuth, remove this and use installationStore
-    token: process.env.SLACK_BOT_TOKEN
+    token: isSingleWorkspaceMode ? process.env.SLACK_BOT_TOKEN : undefined
 });
+
+if (isSingleWorkspaceMode) {
+    console.log('🔧 Slack bot running in SINGLE-WORKSPACE mode (development)');
+} else {
+    console.log('🚀 Slack bot running in MULTI-WORKSPACE mode (production with OAuth)');
+}
 
 // Helper function to get workspace from database
 async function getWorkspace(teamId) {
