@@ -524,6 +524,209 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// GET /api/incidents/analytics/summary - Analytics summary data
+router.get('/analytics/summary', async (req, res) => {
+    try {
+        const { start, end, team_id } = req.query;
+
+        const startDate = start || moment().subtract(30, 'days').format('YYYY-MM-DD');
+        const endDate = end || moment().format('YYYY-MM-DD');
+        const teamIdFilter = parseInt(team_id) || 1;
+
+        // Get incidents by category
+        const categoryResult = await db.query(
+            `SELECT category, COUNT(*) as count
+             FROM incidents
+             WHERE date >= $1 AND date <= $2 AND team_id = $3
+             GROUP BY category
+             ORDER BY count DESC`,
+            [startDate, endDate, teamIdFilter]
+        );
+
+        // Get incidents by severity
+        const severityResult = await db.query(
+            `SELECT severity, COUNT(*) as count
+             FROM incidents
+             WHERE date >= $1 AND date <= $2 AND team_id = $3
+             GROUP BY severity
+             ORDER BY CASE severity
+                 WHEN 'critical' THEN 4
+                 WHEN 'high' THEN 3
+                 WHEN 'medium' THEN 2
+                 WHEN 'low' THEN 1
+             END DESC`,
+            [startDate, endDate, teamIdFilter]
+        );
+
+        // Get daily incident counts
+        const dailyResult = await db.query(
+            `SELECT date, COUNT(*) as count
+             FROM incidents
+             WHERE date >= $1 AND date <= $2 AND team_id = $3
+             GROUP BY date
+             ORDER BY date`,
+            [startDate, endDate, teamIdFilter]
+        );
+
+        res.json({
+            start_date: startDate,
+            end_date: endDate,
+            by_category: categoryResult.rows,
+            by_severity: severityResult.rows,
+            daily_counts: dailyResult.rows
+        });
+    } catch (error) {
+        console.error('Error fetching analytics summary:', error);
+        res.status(500).json({ error: 'Failed to fetch analytics summary' });
+    }
+});
+
+// GET /api/incidents/analytics/planetary-correlation - Planetary correlation analysis
+router.get('/analytics/planetary-correlation', async (req, res) => {
+    try {
+        const { start, end, team_id } = req.query;
+
+        const startDate = start || moment().subtract(30, 'days').format('YYYY-MM-DD');
+        const endDate = end || moment().format('YYYY-MM-DD');
+        const teamIdFilter = parseInt(team_id) || 1;
+
+        // Get all incidents in range
+        const incidentsResult = await db.query(
+            `SELECT date, severity, category
+             FROM incidents
+             WHERE date >= $1 AND date <= $2 AND team_id = $3
+             ORDER BY date`,
+            [startDate, endDate, teamIdFilter]
+        );
+
+        // Get ephemeris data for the same range
+        const ephemerisResult = await db.query(
+            `SELECT date, mars_ra, mercury_ra, venus_ra, jupiter_ra, saturn_ra, moon_ra
+             FROM ephemeris_data
+             WHERE date >= $1 AND date <= $2
+             ORDER BY date`,
+            [startDate, endDate]
+        );
+
+        // Create incident map by date
+        const incidentsByDate = {};
+        incidentsResult.rows.forEach(incident => {
+            const dateKey = moment(incident.date).format('YYYY-MM-DD');
+            if (!incidentsByDate[dateKey]) {
+                incidentsByDate[dateKey] = [];
+            }
+            incidentsByDate[dateKey].push(incident);
+        });
+
+        // Analyze planetary correlations
+        const planetaryStats = {
+            mars: { high_risk_days: 0, total_days: 0, incidents: 0 },
+            mercury: { high_risk_days: 0, total_days: 0, incidents: 0 },
+            venus: { high_risk_days: 0, total_days: 0, incidents: 0 },
+            jupiter: { high_risk_days: 0, total_days: 0, incidents: 0 },
+            saturn: { high_risk_days: 0, total_days: 0, incidents: 0 },
+            moon: { high_risk_days: 0, total_days: 0, incidents: 0 }
+        };
+
+        ephemerisResult.rows.forEach(ephemeris => {
+            const dateKey = moment(ephemeris.date).format('YYYY-MM-DD');
+            const incidents = incidentsByDate[dateKey] || [];
+            const hasIncidents = incidents.length > 0;
+            const incidentCount = incidents.length;
+
+            // Mars intensity
+            const marsIntensity = Math.abs(ephemeris.mars_ra % 30);
+            if (marsIntensity > 25) {
+                planetaryStats.mars.high_risk_days++;
+                if (hasIncidents) planetaryStats.mars.incidents += incidentCount;
+            }
+            planetaryStats.mars.total_days++;
+
+            // Mercury retrograde-like position
+            const mercuryPosition = ephemeris.mercury_ra % 360;
+            if (mercuryPosition > 330 || mercuryPosition < 30) {
+                planetaryStats.mercury.high_risk_days++;
+                if (hasIncidents) planetaryStats.mercury.incidents += incidentCount;
+            }
+            planetaryStats.mercury.total_days++;
+
+            // Venus position
+            const venusPosition = ephemeris.venus_ra % 360;
+            if (venusPosition > 300 || venusPosition < 60) {
+                planetaryStats.venus.high_risk_days++;
+                if (hasIncidents) planetaryStats.venus.incidents += incidentCount;
+            }
+            planetaryStats.venus.total_days++;
+
+            // Jupiter position
+            const jupiterPosition = ephemeris.jupiter_ra % 360;
+            if (jupiterPosition > 270 && jupiterPosition < 330) {
+                planetaryStats.jupiter.high_risk_days++;
+                if (hasIncidents) planetaryStats.jupiter.incidents += incidentCount;
+            }
+            planetaryStats.jupiter.total_days++;
+
+            // Saturn position
+            const saturnPosition = ephemeris.saturn_ra % 360;
+            if (saturnPosition > 240 && saturnPosition < 300) {
+                planetaryStats.saturn.high_risk_days++;
+                if (hasIncidents) planetaryStats.saturn.incidents += incidentCount;
+            }
+            planetaryStats.saturn.total_days++;
+
+            // Moon phases
+            const moonPosition = ephemeris.moon_ra % 360;
+            if (moonPosition > 345 || moonPosition < 15 || (moonPosition > 165 && moonPosition < 195)) {
+                planetaryStats.moon.high_risk_days++;
+                if (hasIncidents) planetaryStats.moon.incidents += incidentCount;
+            }
+            planetaryStats.moon.total_days++;
+        });
+
+        // Calculate correlation scores
+        const correlations = Object.keys(planetaryStats).map(planet => {
+            const stats = planetaryStats[planet];
+            const correlation = stats.high_risk_days > 0
+                ? (stats.incidents / stats.high_risk_days)
+                : 0;
+            return {
+                planet: planet.charAt(0).toUpperCase() + planet.slice(1),
+                correlation_score: Math.round(correlation * 100) / 100,
+                high_risk_days: stats.high_risk_days,
+                incidents_on_high_risk_days: stats.incidents
+            };
+        }).sort((a, b) => b.correlation_score - a.correlation_score);
+
+        res.json({
+            start_date: startDate,
+            end_date: endDate,
+            correlations: correlations
+        });
+    } catch (error) {
+        console.error('Error calculating planetary correlation:', error);
+        res.status(500).json({ error: 'Failed to calculate planetary correlation' });
+    }
+});
+
+// GET /api/incidents/analytics/teams - Get list of teams for comparison
+router.get('/analytics/teams', async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT DISTINCT team_id, COUNT(*) as incident_count
+             FROM incidents
+             GROUP BY team_id
+             ORDER BY team_id`
+        );
+
+        res.json({
+            teams: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching teams:', error);
+        res.status(500).json({ error: 'Failed to fetch teams' });
+    }
+});
+
 // Helper function to calculate actual risk level based on incidents
 function calculateActualRisk(incidents) {
     if (incidents.length === 0) {

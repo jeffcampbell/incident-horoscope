@@ -67,6 +67,11 @@ app.get('/calendar', (req, res) => {
     res.render('calendar');
 });
 
+// Analytics dashboard
+app.get('/analytics', (req, res) => {
+    res.render('analytics');
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
