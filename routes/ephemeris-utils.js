@@ -55,8 +55,8 @@ async function fetchEphemerisForDate(date, location) {
         }
     }
     
-    console.log(`Ephemeris fetch complete. Using fallback data: ${usingFallbackData}`);
-    console.log('Data sources:', dataSource);
+    // Consolidate into single atomic log write to prevent interleaving
+    console.log(`Ephemeris fetch complete. Using fallback data: ${usingFallbackData}\nData sources: ${JSON.stringify(dataSource)}`);
     
     // Add metadata about data sources
     ephemerisData.data_source_info = {
@@ -71,7 +71,7 @@ async function fetchEphemerisForDate(date, location) {
 async function fetchBodyPosition(bodyCode, date, observer) {
     const startDate = moment(date).format('YYYY-MM-DD');
     const endDate = moment(date).add(1, 'day').format('YYYY-MM-DD');
-    
+
     const params = new URLSearchParams({
         format: 'text',  // Use text format as shown in example - more reliable parsing
         COMMAND: bodyCode,  // Remove quotes around body code
@@ -80,7 +80,7 @@ async function fetchBodyPosition(bodyCode, date, observer) {
         EPHEM_TYPE: 'OBSERVER',
         CENTER: '500@399',  // Earth geocenter
         START_TIME: startDate,  // Remove quotes
-        STOP_TIME: endDate,     // Remove quotes  
+        STOP_TIME: endDate,     // Remove quotes
         STEP_SIZE: '1d',        // Remove space - NASA API expects '1d' not '1 d'
         QUANTITIES: '1',        // Just astrometric RA/DEC to avoid "too many constants" error
         TIME_DIGITS: 'MINUTES',
@@ -89,12 +89,10 @@ async function fetchBodyPosition(bodyCode, date, observer) {
         EXTRA_PREC: 'YES',      // Extra precision for better accuracy
         CSV_FORMAT: 'NO'
     });
-    
+
     const url = `${process.env.NASA_API_BASE}?${params}`;
-    
+
     try {
-        console.log(`Fetching NASA data for body ${bodyCode}: ${url}`);
-        
         const response = await axios.get(url, {
             timeout: 15000,  // Increased timeout
             headers: {
@@ -102,11 +100,9 @@ async function fetchBodyPosition(bodyCode, date, observer) {
                 'Accept': 'text/plain'
             }
         });
-        
-        console.log(`NASA API response status: ${response.status}`);
-        
+
         const parsed = parseEphemerisResponse(response.data, bodyCode);
-        
+
         // If parsing failed or NASA API is unavailable, generate fallback data
         if (!parsed) {
             console.warn(`Failed to parse NASA data for body ${bodyCode}, using fallback`);
@@ -114,13 +110,12 @@ async function fetchBodyPosition(bodyCode, date, observer) {
             fallbackData.isFallback = true;
             return fallbackData;
         }
-        
+
         // Mark as real NASA data
         parsed.isFallback = false;
-        console.log(`Successfully parsed NASA data for body ${bodyCode}`);
         return parsed;
     } catch (error) {
-        console.warn(`NASA API failed for body ${bodyCode}:`, error.message);
+        console.warn(`NASA API failed for body ${bodyCode}: ${error.message}`);
         const fallbackData = generateFallbackPosition(bodyCode, date);
         fallbackData.isFallback = true;
         return fallbackData;
@@ -133,73 +128,69 @@ function parseEphemerisResponse(data, bodyCode) {
             console.warn('NASA API returned non-string data');
             return null;
         }
-        
-        console.log(`Parsing NASA response for body ${bodyCode}, data length: ${data.length}`);
-        
+
         // Check for API errors first
         if (data.includes('ERROR') || data.includes('FAILED') || data.includes('No ephemeris')) {
-            console.warn('NASA API returned error:', data.substring(0, 200));
+            console.warn(`NASA API returned error for body ${bodyCode}:`, data.substring(0, 200));
             return null;
         }
-        
+
         // Parse NASA Horizons text format response
         const lines = data.split('\n');
         let dataSection = false;
         let foundData = false;
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            
+
             // Look for start of ephemeris data
             if (line.includes('$$SOE')) {
                 dataSection = true;
-                console.log('Found start of ephemeris data ($$SOE)');
                 continue;
             }
-            
+
             // Look for end of ephemeris data
             if (line.includes('$$EOE')) {
-                console.log('Found end of ephemeris data ($$EOE)');
                 break;
             }
-            
+
             if (dataSection && line.trim()) {
                 // NASA Horizons text format typically has columns:
                 // Date__(UT)__HR:MN     R.A._____(ICRF)_____DEC  APmag S-brt  delta      deldot
                 // Look for lines with date and coordinates
-                
+
                 const trimmed = line.trim();
                 if (trimmed.length < 20) continue; // Skip short lines
-                
+
                 // Split by multiple spaces to get columns
                 const parts = trimmed.split(/\s+/);
-                
+
                 if (parts.length >= 4) {
                     // Try to find RA and DEC values
                     // RA is usually in format HH MM SS.SS or decimal degrees
                     // DEC is usually in format +/-DD MM SS.S or decimal degrees
-                    
+
                     let ra = null;
                     let dec = null;
                     let distance = 1.0; // Default distance
-                    
+
                     // Look for RA/DEC patterns in the parts array
                     for (let j = 1; j < parts.length - 1; j++) {
                         const part = parts[j];
                         const nextPart = parts[j + 1];
-                        
+
                         // Check if this looks like RA (0-360 degrees)
                         const raCandidate = parseFloat(part);
                         const decCandidate = parseFloat(nextPart);
-                        
+
                         if (!isNaN(raCandidate) && !isNaN(decCandidate)) {
                             // RA should be 0-360 degrees
                             // DEC should be -90 to +90 degrees
-                            if (raCandidate >= 0 && raCandidate <= 360 && 
+                            if (raCandidate >= 0 && raCandidate <= 360 &&
                                 decCandidate >= -90 && decCandidate <= 90) {
                                 ra = raCandidate;
                                 dec = decCandidate;
-                                
+
                                 // Look for distance in subsequent columns (AU)
                                 if (j + 2 < parts.length) {
                                     const distCandidate = parseFloat(parts[j + 2]);
@@ -207,26 +198,24 @@ function parseEphemerisResponse(data, bodyCode) {
                                         distance = distCandidate;
                                     }
                                 }
-                                
+
                                 foundData = true;
-                                console.log(`Parsed coordinates for body ${bodyCode}: RA=${ra}°, DEC=${dec}°, Distance=${distance} AU`);
                                 break;
                             }
                         }
                     }
-                    
+
                     if (foundData) {
                         return { ra, dec, distance };
                     }
                 }
             }
         }
-        
+
         if (!foundData) {
-            console.warn(`No valid coordinate data found in NASA response for body ${bodyCode}`);
-            console.log('Response sample:', data.substring(0, 500));
+            console.warn(`No valid coordinate data found in NASA response for body ${bodyCode}\nResponse sample: ${data.substring(0, 500)}`);
         }
-        
+
         return null;
     } catch (error) {
         console.error('Error parsing ephemeris response:', error);
