@@ -46,6 +46,7 @@ async function initializeDatabase() {
 app.use('/api/ephemeris', require('./routes/ephemeris'));
 app.use('/api/horoscope', require('./routes/horoscope'));
 app.use('/api/incidents', require('./routes/incidents'));
+app.use('/api/teams', require('./routes/teams'));
 
 // Slack integration routes (if configured)
 if (slackIntegration) {
@@ -70,6 +71,19 @@ app.get('/calendar', (req, res) => {
 // Analytics dashboard
 app.get('/analytics', (req, res) => {
     res.render('analytics');
+});
+
+// Team routes
+app.get('/team/setup', (req, res) => {
+    res.render('team-setup');
+});
+
+app.get('/team/dashboard/:id', (req, res) => {
+    res.render('team-dashboard', { teamId: req.params.id });
+});
+
+app.get('/team/list', (req, res) => {
+    res.render('team-list');
 });
 
 // Health check

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 Team Setup - Planetary Horoscope</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #ffd700;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-add {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .btn-add:hover {
+            background: rgba(255, 215, 0, 0.3);
+        }
+
+        .member-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .member-item input {
+            margin-bottom: 0;
+        }
+
+        .btn-remove {
+            background: rgba(255, 0, 0, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-remove:hover {
+            background: rgba(255, 0, 0, 0.5);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .category-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .category-item label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .success-message {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 255, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .nav-links a {
+            color: #ffd700;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔮 Team Configuration Portal</h1>
+            <p>Customize your team's horoscope experience</p>
+        </div>
+
+        <div id="successMessage" class="success-message"></div>
+        <div id="errorMessage" class="error-message"></div>
+
+        <form id="teamSetupForm">
+            <!-- Team Profile -->
+            <div class="card">
+                <h2>📋 Team Profile</h2>
+
+                <div class="form-group">
+                    <label for="teamName">Team Name *</label>
+                    <input type="text" id="teamName" name="name" required placeholder="e.g., Backend Engineering">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Team Description</label>
+                    <textarea id="description" name="description" placeholder="What does your team do?"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="primaryRole">Primary Role/Focus</label>
+                        <select id="primaryRole" name="primary_role">
+                            <option value="">Select a role</option>
+                            <option value="Backend">Backend</option>
+                            <option value="Frontend">Frontend</option>
+                            <option value="DevOps">DevOps</option>
+                            <option value="QA">QA</option>
+                            <option value="Full-Stack">Full-Stack</option>
+                            <option value="Leadership">Leadership</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timezone">Timezone</label>
+                        <select id="timezone" name="timezone">
+                            <option value="America/New_York">Eastern Time (ET)</option>
+                            <option value="America/Chicago">Central Time (CT)</option>
+                            <option value="America/Denver">Mountain Time (MT)</option>
+                            <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                            <option value="America/Phoenix">Arizona Time (MST)</option>
+                            <option value="Europe/London">London (GMT/BST)</option>
+                            <option value="Europe/Paris">Paris (CET)</option>
+                            <option value="Asia/Tokyo">Tokyo (JST)</option>
+                            <option value="Asia/Shanghai">Shanghai (CST)</option>
+                            <option value="Asia/Kolkata">India (IST)</option>
+                            <option value="Australia/Sydney">Sydney (AEDT)</option>
+                            <option value="UTC">UTC</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="teamLeadEmail">Team Lead Email</label>
+                    <input type="email" id="teamLeadEmail" name="team_lead_email" placeholder="team-lead@company.com">
+                </div>
+            </div>
+
+            <!-- Horoscope Delivery Preferences -->
+            <div class="card">
+                <h2>📨 Horoscope Delivery Preferences</h2>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="dailyEnabled" name="daily_horoscope_enabled" checked>
+                        <label for="dailyEnabled">Enable daily horoscope messages</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="deliveryTime">Delivery Time</label>
+                        <input type="time" id="deliveryTime" name="delivery_time" value="09:00">
+                        <p class="help-text">Time will be in your team's timezone</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="languageTone">Language/Tone</label>
+                        <select id="languageTone" name="language_tone">
+                            <option value="Cosmic">Cosmic (Mystical & Astrological)</option>
+                            <option value="Technical">Technical (Engineering Focused)</option>
+                            <option value="Casual">Casual (Friendly & Light)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="deliveryChannel">Slack Channel ID (optional)</label>
+                    <input type="text" id="deliveryChannel" name="delivery_channel" placeholder="C01234567890">
+                    <p class="help-text">You can link your Slack workspace after creating the team</p>
+                </div>
+            </div>
+
+            <!-- Team Members -->
+            <div class="card">
+                <h2>👥 Team Members</h2>
+                <p class="help-text" style="margin-bottom: 15px;">Add your team members (optional)</p>
+
+                <div id="membersList"></div>
+
+                <button type="button" class="btn btn-add" onclick="addMember()">+ Add Member</button>
+            </div>
+
+            <!-- Incident Tracking -->
+            <div class="card">
+                <h2>🚨 Incident Tracking Customization</h2>
+                <p class="help-text" style="margin-bottom: 15px;">Enable the incident categories relevant to your team</p>
+
+                <div class="category-grid">
+                    <div class="category-item">
+                        <label>
+                            <input type="checkbox" name="category_deployment" value="deployment" checked>
+                            <span>Deployment</span>
+                        </label>
+                    </div>
+                    <div class="category-item">
+                        <label>
+                            <input type="checkbox" name="category_infrastructure" value="infrastructure" checked>
+                            <span>Infrastructure</span>
+                        </label>
+                    </div>
+                    <div class="category-item">
+                        <label>
+                            <input type="checkbox" name="category_communication" value="communication" checked>
+                            <span>Communication</span>
+                        </label>
+                    </div>
+                    <div class="category-item">
+                        <label>
+                            <input type="checkbox" name="category_monitoring" value="monitoring" checked>
+                            <span>Monitoring</span>
+                        </label>
+                    </div>
+                    <div class="category-item">
+                        <label>
+                            <input type="checkbox" name="category_other" value="other" checked>
+                            <span>Other</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="card">
+                <button type="submit" class="btn btn-primary">Create Team Profile</button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Cancel</button>
+            </div>
+        </form>
+
+        <div class="nav-links">
+            <a href="/">← Back to Dashboard</a>
+            <a href="/team/list">View All Teams</a>
+        </div>
+    </div>
+
+    <script>
+        let memberCount = 0;
+
+        function addMember() {
+            const membersList = document.getElementById('membersList');
+            const memberItem = document.createElement('div');
+            memberItem.className = 'member-item';
+            memberItem.id = `member-${memberCount}`;
+
+            memberItem.innerHTML = `
+                <input type="text" placeholder="Name" name="members[${memberCount}][name]" required>
+                <input type="email" placeholder="Email" name="members[${memberCount}][email]" required>
+                <button type="button" class="btn-remove" onclick="removeMember(${memberCount})">Remove</button>
+            `;
+
+            membersList.appendChild(memberItem);
+            memberCount++;
+        }
+
+        function removeMember(id) {
+            const element = document.getElementById(`member-${id}`);
+            if (element) {
+                element.remove();
+            }
+        }
+
+        document.getElementById('teamSetupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                primary_role: formData.get('primary_role'),
+                timezone: formData.get('timezone'),
+                language_tone: formData.get('language_tone'),
+                team_lead_email: formData.get('team_lead_email'),
+                daily_horoscope_enabled: formData.get('daily_horoscope_enabled') === 'on',
+                delivery_time: formData.get('delivery_time') + ':00',
+                delivery_channel: formData.get('delivery_channel'),
+                members: [],
+                incident_categories: []
+            };
+
+            // Collect members
+            for (let i = 0; i < memberCount; i++) {
+                const name = formData.get(`members[${i}][name]`);
+                const email = formData.get(`members[${i}][email]`);
+                if (name && email) {
+                    data.members.push({ name, email });
+                }
+            }
+
+            // Collect enabled categories
+            const categories = ['deployment', 'infrastructure', 'communication', 'monitoring', 'other'];
+            categories.forEach(cat => {
+                const enabled = formData.get(`category_${cat}`) === cat;
+                if (enabled) {
+                    data.incident_categories.push({
+                        category: cat,
+                        enabled: true
+                    });
+                }
+            });
+
+            try {
+                const response = await fetch('/api/teams', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('successMessage').textContent = 'Team created successfully! Redirecting to dashboard...';
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('errorMessage').style.display = 'none';
+
+                    setTimeout(() => {
+                        window.location.href = `/team/dashboard/${result.team.id}`;
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'Failed to create team');
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = 'Error: ' + error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        });
+
+        // Add one member field by default
+        addMember();
+    </script>
+</body>
+</html>

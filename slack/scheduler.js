@@ -11,19 +11,26 @@ function scheduleDailyHoroscopeMessages(app) {
         try {
             console.log('🔮 Checking for scheduled daily horoscopes...');
 
-            // Get all active channel configurations
+            // Get all active channel configurations with team settings
             const result = await db.query(`
-                SELECT scc.*, sw.team_id, sw.bot_token
+                SELECT scc.*, sw.team_id, sw.bot_token, sw.app_team_id,
+                       t.primary_role, t.language_tone, t.timezone as team_timezone,
+                       t.delivery_time as team_delivery_time
                 FROM slack_channel_configs scc
                 JOIN slack_workspaces sw ON scc.workspace_id = sw.id
+                LEFT JOIN teams t ON sw.app_team_id = t.id
                 WHERE scc.daily_horoscope_enabled = true AND sw.is_active = true
             `);
 
             for (const config of result.rows) {
                 try {
-                    // Get current time in the channel's timezone
-                    const now = moment.tz(config.timezone);
-                    const scheduledTime = moment.tz(config.daily_horoscope_time, 'HH:mm:ss', config.timezone);
+                    // Use team timezone and delivery time if available, otherwise use channel settings
+                    const timezone = config.team_timezone || config.timezone;
+                    const deliveryTime = config.team_delivery_time || config.daily_horoscope_time;
+
+                    // Get current time in the appropriate timezone
+                    const now = moment.tz(timezone);
+                    const scheduledTime = moment.tz(deliveryTime, 'HH:mm:ss', timezone);
 
                     // Check if we're in the right hour to send
                     if (now.hour() === scheduledTime.hour()) {
@@ -61,7 +68,13 @@ function scheduleDailyHoroscopeMessages(app) {
 async function sendDailyHoroscope(app, config) {
     try {
         const date = moment().format('YYYY-MM-DD');
-        const horoscopeData = await fetchHoroscopeData(date);
+
+        // Fetch horoscope data with team settings if available
+        const horoscopeData = await fetchHoroscopeData(
+            date,
+            config.app_team_id,
+            config.primary_role
+        );
 
         if (!horoscopeData) {
             console.log(`No horoscope data available for ${date}`);
@@ -71,8 +84,12 @@ async function sendDailyHoroscope(app, config) {
         // Get accuracy stats
         const accuracyStats = await getAccuracyStats(config.workspace_id);
 
-        // Format message
-        const message = formatHoroscopeMessage(horoscopeData, accuracyStats);
+        // Format message with team-specific tone
+        const message = formatHoroscopeMessage(
+            horoscopeData,
+            accuracyStats,
+            config.language_tone
+        );
 
         // Add daily greeting
         const greetingBlock = {
