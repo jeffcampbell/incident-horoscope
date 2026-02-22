@@ -6,6 +6,12 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Import Slack integration
+let slackIntegration;
+if (process.env.SLACK_SIGNING_SECRET) {
+    slackIntegration = require('./slack');
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -41,6 +47,11 @@ app.use('/api/ephemeris', require('./routes/ephemeris'));
 app.use('/api/horoscope', require('./routes/horoscope'));
 app.use('/api/incidents', require('./routes/incidents'));
 
+// Slack integration routes (if configured)
+if (slackIntegration) {
+    app.use('/slack', slackIntegration.receiver.router);
+}
+
 // Main dashboard route
 app.get('/', (req, res) => {
     res.render('dashboard');
@@ -65,9 +76,16 @@ app.get('/health', (req, res) => {
 app.listen(PORT, async () => {
     console.log(`🔮 Planetary Horoscope Server running on port ${PORT}`);
     console.log(`🌟 Dashboard available at http://localhost:${PORT}`);
-    
+
     // Initialize database for production
     await initializeDatabase();
+
+    // Initialize Slack integration if configured
+    if (slackIntegration) {
+        await slackIntegration.initializeSlack();
+        console.log(`🤖 Slack integration enabled`);
+        console.log(`   - OAuth URL: http://localhost:${PORT}/slack/oauth_redirect`);
+    }
 });
 
 module.exports = app;
