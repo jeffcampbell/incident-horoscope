@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Analytics Dashboard - Planetary Horoscope</title>
+    <link rel="icon" href="/path-to-crystal-ball-icon.ico" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: #ffd700;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .control-group button {
+            padding: 10px 20px;
+            background: #ffd700;
+            color: #1e3c72;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .control-group button:hover {
+            background: #ffed4e;
+            transform: translateY(-2px);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            font-size: 1rem;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-card h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 15px;
+        }
+
+        .full-width-chart {
+            grid-column: 1 / -1;
+        }
+
+        .heatmap-container {
+            overflow-x: auto;
+        }
+
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .heatmap-table th,
+        .heatmap-table td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .heatmap-table th {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+
+        .heatmap-cell {
+            transition: all 0.3s ease;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+        }
+
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ranking-planet {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .ranking-score {
+            font-size: 1.2rem;
+            color: #ffd700;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Analytics Dashboard</h1>
+            <p>Prediction Accuracy & Incident Trends Analysis</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="/">🔮 Dashboard</a>
+            <a href="/calendar">📅 Calendar</a>
+            <a href="/how-it-works">ℹ️ How It Works</a>
+            <a href="/analytics">📊 Analytics (Current)</a>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="date-range">Date Range:</label>
+                <select id="date-range">
+                    <option value="7">Last 7 Days</option>
+                    <option value="30" selected>Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="custom-dates" style="display: none;">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date">
+            </div>
+
+            <div class="control-group" id="custom-dates-end" style="display: none;">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date">
+            </div>
+
+            <div class="control-group" id="team-selector" style="display: none;">
+                <label for="team-id">Team:</label>
+                <select id="team-id">
+                    <option value="1">Team 1</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button onclick="refreshData()">Refresh Data</button>
+            </div>
+        </div>
+
+        <div id="error-container"></div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>7-Day Accuracy</h3>
+                <div class="metric-value" id="accuracy-7d">--%</div>
+                <div class="metric-label" id="accuracy-7d-label">Loading...</div>
+            </div>
+            <div class="metric-card">
+                <h3>30-Day Accuracy</h3>
+                <div class="metric-value" id="accuracy-30d">--%</div>
+                <div class="metric-label" id="accuracy-30d-label">Loading...</div>
+            </div>
+            <div class="metric-card">
+                <h3>Total Incidents</h3>
+                <div class="metric-value" id="total-incidents">--</div>
+                <div class="metric-label" id="total-incidents-label">Loading...</div>
+            </div>
+            <div class="metric-card">
+                <h3>Analysis Period</h3>
+                <div class="metric-value" id="analysis-days">--</div>
+                <div class="metric-label">Days</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card full-width-chart">
+                <h3>📈 Accuracy Trend Over Time</h3>
+                <div class="chart-container">
+                    <canvas id="accuracy-trend-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>📊 Incidents by Category</h3>
+                <div class="chart-container">
+                    <canvas id="category-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>⚠️ Incidents by Severity</h3>
+                <div class="chart-container">
+                    <canvas id="severity-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card full-width-chart">
+                <h3>🔥 Risk Level Distribution Over Time</h3>
+                <div class="chart-container">
+                    <canvas id="risk-distribution-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card full-width-chart">
+                <h3>🎯 Prediction vs Actual Risk Heatmap</h3>
+                <div class="heatmap-container">
+                    <table class="heatmap-table" id="heatmap-table">
+                        <thead>
+                            <tr>
+                                <th>Predicted ↓ / Actual →</th>
+                                <th>Normal</th>
+                                <th>Medium</th>
+                                <th>High</th>
+                            </tr>
+                        </thead>
+                        <tbody id="heatmap-body">
+                            <tr><td colspan="4" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>🪐 Top Correlating Planets</h3>
+                <ul class="ranking-list" id="planetary-ranking">
+                    <li class="loading">Loading planetary correlations...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let charts = {};
+        let currentData = {};
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Setup event listeners
+            document.getElementById('date-range').addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    document.getElementById('custom-dates').style.display = 'flex';
+                    document.getElementById('custom-dates-end').style.display = 'flex';
+                } else {
+                    document.getElementById('custom-dates').style.display = 'none';
+                    document.getElementById('custom-dates-end').style.display = 'none';
+                }
+            });
+
+            // Load team data
+            await loadTeams();
+
+            // Load initial data
+            await refreshData();
+        });
+
+        async function loadTeams() {
+            try {
+                const response = await fetch('/api/incidents/analytics/teams');
+                const data = await response.json();
+
+                if (data.teams && data.teams.length > 1) {
+                    const teamSelector = document.getElementById('team-selector');
+                    teamSelector.style.display = 'flex';
+
+                    const select = document.getElementById('team-id');
+                    select.innerHTML = data.teams.map(team =>
+                        `<option value="${team.team_id}">Team ${team.team_id} (${team.incident_count} incidents)</option>`
+                    ).join('');
+                }
+            } catch (error) {
+                console.error('Error loading teams:', error);
+            }
+        }
+
+        async function refreshData() {
+            const dateRange = document.getElementById('date-range').value;
+            const teamId = document.getElementById('team-id').value;
+
+            let startDate, endDate;
+            if (dateRange === 'custom') {
+                startDate = document.getElementById('start-date').value;
+                endDate = document.getElementById('end-date').value;
+                if (!startDate || !endDate) {
+                    showError('Please select both start and end dates');
+                    return;
+                }
+            } else {
+                endDate = new Date().toISOString().split('T')[0];
+                startDate = new Date(Date.now() - dateRange * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            }
+
+            clearError();
+            showLoading();
+
+            try {
+                // Fetch all data in parallel
+                const [validationData, summaryData, planetaryData, validation7d] = await Promise.all([
+                    fetch(`/api/incidents/validation/range?start=${startDate}&end=${endDate}&team_id=${teamId}`).then(r => r.json()),
+                    fetch(`/api/incidents/analytics/summary?start=${startDate}&end=${endDate}&team_id=${teamId}`).then(r => r.json()),
+                    fetch(`/api/incidents/analytics/planetary-correlation?start=${startDate}&end=${endDate}&team_id=${teamId}`).then(r => r.json()),
+                    fetch(`/api/incidents/validation/range?start=${get7DaysAgo()}&end=${endDate}&team_id=${teamId}`).then(r => r.json())
+                ]);
+
+                currentData = { validationData, summaryData, planetaryData, validation7d };
+
+                // Check if we have sufficient data
+                if (validationData.summary.total_days < 7) {
+                    showWarning(`Limited data available: ${validationData.summary.total_days} days. At least 7 days of historical data recommended for accurate analytics.`);
+                }
+
+                updateMetrics(validationData, validation7d);
+                updateAccuracyTrend(validationData);
+                updateCategoryChart(summaryData);
+                updateSeverityChart(summaryData);
+                updateRiskDistribution(validationData);
+                updateHeatmap(validationData);
+                updatePlanetaryRanking(planetaryData);
+            } catch (error) {
+                showError('Failed to load analytics data: ' + error.message);
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        function get7DaysAgo() {
+            return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        }
+
+        function updateMetrics(validationData, validation7d) {
+            // 7-day accuracy
+            document.getElementById('accuracy-7d').textContent = validation7d.summary.overall_accuracy + '%';
+            document.getElementById('accuracy-7d-label').textContent =
+                `${validation7d.summary.matches} matches, ${validation7d.summary.partial_matches} partial`;
+
+            // 30-day accuracy
+            document.getElementById('accuracy-30d').textContent = validationData.summary.overall_accuracy + '%';
+            document.getElementById('accuracy-30d-label').textContent =
+                `${validationData.summary.matches} matches, ${validationData.summary.partial_matches} partial`;
+
+            // Total incidents
+            const totalIncidents = validationData.validations.reduce((sum, v) => sum + v.incidents_count, 0);
+            document.getElementById('total-incidents').textContent = totalIncidents;
+            document.getElementById('total-incidents-label').textContent =
+                `Across ${validationData.summary.total_days} days`;
+
+            // Analysis period
+            document.getElementById('analysis-days').textContent = validationData.summary.total_days;
+        }
+
+        function updateAccuracyTrend(validationData) {
+            const ctx = document.getElementById('accuracy-trend-chart');
+
+            // Calculate rolling 7-day accuracy
+            const data = validationData.validations.map((v, idx, arr) => {
+                const window = arr.slice(Math.max(0, idx - 6), idx + 1);
+                const matches = window.filter(w => w.match_type === 'match').length;
+                const partialMatches = window.filter(w => w.match_type === 'partial_match').length;
+                const accuracy = window.length > 0
+                    ? Math.round(((matches + partialMatches * 0.5) / window.length) * 100)
+                    : 0;
+                return {
+                    date: v.date,
+                    accuracy: accuracy
+                };
+            });
+
+            if (charts.accuracyTrend) {
+                charts.accuracyTrend.destroy();
+            }
+
+            charts.accuracyTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: '7-Day Rolling Accuracy',
+                        data: data.map(d => d.accuracy),
+                        borderColor: '#ffd700',
+                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'white',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCategoryChart(summaryData) {
+            const ctx = document.getElementById('category-chart');
+
+            if (charts.category) {
+                charts.category.destroy();
+            }
+
+            const categories = summaryData.by_category;
+            if (categories.length === 0) {
+                ctx.parentElement.innerHTML = '<div class="no-data">No incident data available</div>';
+                return;
+            }
+
+            charts.category = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categories.map(c => c.category.charAt(0).toUpperCase() + c.category.slice(1)),
+                    datasets: [{
+                        data: categories.map(c => c.count),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSeverityChart(summaryData) {
+            const ctx = document.getElementById('severity-chart');
+
+            if (charts.severity) {
+                charts.severity.destroy();
+            }
+
+            const severities = summaryData.by_severity;
+            if (severities.length === 0) {
+                ctx.parentElement.innerHTML = '<div class="no-data">No incident data available</div>';
+                return;
+            }
+
+            charts.severity = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: severities.map(s => s.severity.charAt(0).toUpperCase() + s.severity.slice(1)),
+                    datasets: [{
+                        label: 'Incidents',
+                        data: severities.map(s => s.count),
+                        backgroundColor: [
+                            '#90EE90',
+                            '#FFD700',
+                            '#FF8C00',
+                            '#FF4500'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'white',
+                                stepSize: 1
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRiskDistribution(validationData) {
+            const ctx = document.getElementById('risk-distribution-chart');
+
+            if (charts.riskDist) {
+                charts.riskDist.destroy();
+            }
+
+            // Group by date and count risk levels
+            const riskByDate = {};
+            validationData.validations.forEach(v => {
+                if (!riskByDate[v.date]) {
+                    riskByDate[v.date] = { normal: 0, medium: 0, high: 0 };
+                }
+                riskByDate[v.date][v.actual_risk]++;
+            });
+
+            const dates = Object.keys(riskByDate).sort();
+
+            charts.riskDist = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'High Risk',
+                            data: dates.map(d => riskByDate[d].high),
+                            borderColor: '#FF4500',
+                            backgroundColor: 'rgba(255, 69, 0, 0.5)',
+                            fill: true
+                        },
+                        {
+                            label: 'Medium Risk',
+                            data: dates.map(d => riskByDate[d].medium),
+                            borderColor: '#FFD700',
+                            backgroundColor: 'rgba(255, 215, 0, 0.5)',
+                            fill: true
+                        },
+                        {
+                            label: 'Normal',
+                            data: dates.map(d => riskByDate[d].normal),
+                            borderColor: '#90EE90',
+                            backgroundColor: 'rgba(144, 238, 144, 0.5)',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'white',
+                                stepSize: 1
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            stacked: true,
+                            ticks: {
+                                color: 'white',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHeatmap(validationData) {
+            const heatmap = {
+                'high-high': 0,
+                'high-medium': 0,
+                'high-normal': 0,
+                'medium-high': 0,
+                'medium-medium': 0,
+                'medium-normal': 0,
+                'normal-high': 0,
+                'normal-medium': 0,
+                'normal-normal': 0
+            };
+
+            validationData.validations.forEach(v => {
+                const key = `${v.predicted_risk}-${v.actual_risk}`;
+                if (heatmap.hasOwnProperty(key)) {
+                    heatmap[key]++;
+                }
+            });
+
+            const maxValue = Math.max(...Object.values(heatmap));
+
+            const getColor = (value) => {
+                if (value === 0) return 'rgba(255, 255, 255, 0.05)';
+                const intensity = value / maxValue;
+                return `rgba(255, 215, 0, ${intensity * 0.8})`;
+            };
+
+            const tbody = document.getElementById('heatmap-body');
+            tbody.innerHTML = `
+                <tr>
+                    <th>High</th>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['high-normal'])}">${heatmap['high-normal']}</td>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['high-medium'])}">${heatmap['high-medium']}</td>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['high-high'])}">${heatmap['high-high']}</td>
+                </tr>
+                <tr>
+                    <th>Medium</th>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['medium-normal'])}">${heatmap['medium-normal']}</td>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['medium-medium'])}">${heatmap['medium-medium']}</td>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['medium-high'])}">${heatmap['medium-high']}</td>
+                </tr>
+                <tr>
+                    <th>Normal</th>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['normal-normal'])}">${heatmap['normal-normal']}</td>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['normal-medium'])}">${heatmap['normal-medium']}</td>
+                    <td class="heatmap-cell" style="background: ${getColor(heatmap['normal-high'])}">${heatmap['normal-high']}</td>
+                </tr>
+            `;
+        }
+
+        function updatePlanetaryRanking(planetaryData) {
+            const list = document.getElementById('planetary-ranking');
+
+            if (planetaryData.correlations.length === 0) {
+                list.innerHTML = '<li class="no-data">No planetary correlation data available</li>';
+                return;
+            }
+
+            const planetEmojis = {
+                'Mars': '♂️',
+                'Mercury': '☿️',
+                'Venus': '♀️',
+                'Jupiter': '♃',
+                'Saturn': '♄',
+                'Moon': '🌙'
+            };
+
+            list.innerHTML = planetaryData.correlations.map((planet, index) => `
+                <li class="ranking-item">
+                    <div class="ranking-planet">
+                        <span style="font-size: 1.5rem;">${index + 1}.</span>
+                        <span style="font-size: 1.5rem;">${planetEmojis[planet.planet] || '🪐'}</span>
+                        <span>${planet.planet}</span>
+                    </div>
+                    <div>
+                        <div class="ranking-score">${planet.correlation_score.toFixed(2)}</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">
+                            ${planet.incidents_on_high_risk_days} incidents / ${planet.high_risk_days} high-risk days
+                        </div>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function showLoading() {
+            // Loading state is handled by individual chart updates
+        }
+
+        function showError(message) {
+            const container = document.getElementById('error-container');
+            container.innerHTML = `<div class="error">⚠️ ${message}</div>`;
+        }
+
+        function showWarning(message) {
+            const container = document.getElementById('error-container');
+            container.innerHTML = `<div class="error" style="background: rgba(255, 215, 0, 0.2); border-color: rgba(255, 215, 0, 0.5);">⚠️ ${message}</div>`;
+        }
+
+        function clearError() {
+            document.getElementById('error-container').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
