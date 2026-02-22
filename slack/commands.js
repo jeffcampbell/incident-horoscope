@@ -1,9 +1,14 @@
 const moment = require('moment');
 const db = require('../config/database');
 const { fetchEphemerisForDate, storeEphemerisData } = require('../routes/ephemeris-utils');
-const axios = require('axios');
+const { generateHoroscope } = require('../routes/horoscope');
 
-// Helper function to fetch horoscope data
+/**
+ * Fetch horoscope data for a given date
+ * Retrieves ephemeris data from database or NASA API if needed, then generates horoscope
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Object|null} Horoscope data including date, ephemeris, and horoscope predictions
+ */
 async function fetchHoroscopeData(date) {
     try {
         // Check if ephemeris data exists for the date
@@ -28,20 +33,27 @@ async function fetchHoroscopeData(date) {
             return null;
         }
 
-        // Generate horoscope (simplified version based on routes/horoscope.js)
+        // Generate horoscope directly using the horoscope module
         const ephemeris = ephemerisResult.rows[0];
-        const response = await axios.get(`http://localhost:${process.env.PORT || 3000}/api/horoscope`, {
-            params: { date }
-        });
+        const horoscope = await generateHoroscope(ephemeris, null);
 
-        return response.data;
+        return {
+            date,
+            ephemeris,
+            horoscope
+        };
     } catch (error) {
         console.error('Error fetching horoscope data:', error);
         return null;
     }
 }
 
-// Helper function to get recent incidents for display
+/**
+ * Get recent incidents for a workspace
+ * @param {number} workspaceId - Slack workspace database ID
+ * @param {number} limit - Maximum number of incidents to return (default 5)
+ * @returns {Array} Array of incident records
+ */
 async function getRecentIncidents(workspaceId, limit = 5) {
     try {
         const result = await db.query(
@@ -58,28 +70,136 @@ async function getRecentIncidents(workspaceId, limit = 5) {
     }
 }
 
-// Helper function to get accuracy stats
+/**
+ * Get accuracy stats for horoscope predictions for a workspace
+ * Calculates validation metrics for the past 7 days
+ * @param {number} workspaceId - Slack workspace database ID
+ * @returns {Object|null} Summary object with accuracy metrics or null on error
+ */
 async function getAccuracyStats(workspaceId) {
     try {
         const endDate = moment().format('YYYY-MM-DD');
         const startDate = moment().subtract(7, 'days').format('YYYY-MM-DD');
 
-        const response = await axios.get(`http://localhost:${process.env.PORT || 3000}/api/incidents/validation/range`, {
-            params: {
-                start: startDate,
-                end: endDate,
-                team_id: workspaceId
+        // Get all incidents in range for this workspace
+        const incidentsResult = await db.query(
+            `SELECT date, severity, category, duration_minutes
+             FROM incidents
+             WHERE date >= $1 AND date <= $2 AND slack_workspace_id = $3
+             ORDER BY date`,
+            [startDate, endDate, workspaceId]
+        );
+
+        // Get ephemeris data for all dates in range
+        const ephemerisResult = await db.query(
+            `SELECT date, mars_ra, mercury_ra
+             FROM ephemeris_data
+             WHERE date >= $1 AND date <= $2
+             ORDER BY date`,
+            [startDate, endDate]
+        );
+
+        // Create a map of incidents by date
+        const incidentsByDate = {};
+        incidentsResult.rows.forEach(incident => {
+            const dateKey = moment(incident.date).format('YYYY-MM-DD');
+            if (!incidentsByDate[dateKey]) {
+                incidentsByDate[dateKey] = [];
             }
+            incidentsByDate[dateKey].push(incident);
         });
 
-        return response.data.summary;
+        // Calculate validation for each date
+        let totalDays = 0;
+        let matches = 0;
+        let partialMatches = 0;
+        let mismatches = 0;
+
+        ephemerisResult.rows.forEach(ephemeris => {
+            const dateKey = moment(ephemeris.date).format('YYYY-MM-DD');
+            const incidents = incidentsByDate[dateKey] || [];
+
+            // Calculate predicted risk
+            const marsIntensity = Math.abs(ephemeris.mars_ra % 30);
+            const mercuryPosition = ephemeris.mercury_ra % 360;
+
+            let predictedRisk = 'normal';
+            if (marsIntensity > 27) {
+                predictedRisk = 'high';
+            } else if (marsIntensity > 20) {
+                predictedRisk = 'medium';
+            } else if (mercuryPosition > 330 || mercuryPosition < 30) {
+                predictedRisk = 'medium';
+            }
+
+            // Calculate actual risk
+            const actualRisk = calculateActualRisk(incidents);
+
+            // Determine match
+            if (actualRisk === predictedRisk) {
+                matches++;
+            } else if (
+                (predictedRisk === 'high' && actualRisk === 'medium') ||
+                (predictedRisk === 'medium' && actualRisk === 'high') ||
+                (predictedRisk === 'medium' && actualRisk === 'normal') ||
+                (predictedRisk === 'normal' && actualRisk === 'medium')
+            ) {
+                partialMatches++;
+            } else {
+                mismatches++;
+            }
+
+            totalDays++;
+        });
+
+        const accuracy = totalDays > 0
+            ? Math.round(((matches + partialMatches * 0.5) / totalDays) * 100)
+            : 0;
+
+        return {
+            total_days: totalDays,
+            matches: matches,
+            partial_matches: partialMatches,
+            mismatches: mismatches,
+            overall_accuracy: accuracy
+        };
     } catch (error) {
         console.error('Error fetching accuracy stats:', error);
         return null;
     }
 }
 
-// Format horoscope message with interactive buttons
+/**
+ * Calculate actual risk level based on incident severity and count
+ * @param {Array} incidents - Array of incident objects
+ * @returns {string} Risk level: 'high', 'medium', or 'normal'
+ */
+function calculateActualRisk(incidents) {
+    if (incidents.length === 0) {
+        return 'normal';
+    }
+
+    const criticalCount = incidents.filter(i => i.severity === 'critical').length;
+    const highCount = incidents.filter(i => i.severity === 'high').length;
+    const mediumCount = incidents.filter(i => i.severity === 'medium').length;
+
+    if (criticalCount > 0 || highCount >= 2) {
+        return 'high';
+    } else if (highCount > 0 || mediumCount >= 2) {
+        return 'medium';
+    } else if (mediumCount > 0 || incidents.length >= 3) {
+        return 'medium';
+    } else {
+        return 'normal';
+    }
+}
+
+/**
+ * Format horoscope data into Slack message blocks with interactive buttons
+ * @param {Object} horoscopeData - Horoscope data object containing horoscope and date
+ * @param {Object|null} accuracyStats - Accuracy statistics or null
+ * @returns {Object} Slack message object with text and blocks
+ */
 function formatHoroscopeMessage(horoscopeData, accuracyStats) {
     const { horoscope, date } = horoscopeData;
 
