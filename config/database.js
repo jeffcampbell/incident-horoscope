@@ -243,7 +243,7 @@ async function initializeTables() {
                 id SERIAL PRIMARY KEY,
                 team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
                 name VARCHAR(255) NOT NULL,
-                email VARCHAR(255),
+                email VARCHAR(255) NOT NULL,
                 role VARCHAR(50),
                 slack_user_id VARCHAR(255),
                 created_at TIMESTAMP DEFAULT NOW(),

@@ -12,13 +12,20 @@ router.get('/', async (req, res) => {
             return res.status(400).json({ error: 'Date parameter is required' });
         }
 
+        // Validate role parameter if provided
+        const validRoles = ['Backend', 'Frontend', 'DevOps', 'QA', 'Full-Stack', 'Leadership'];
+        if (role && !validRoles.includes(role)) {
+            return res.status(400).json({ error: 'Invalid role provided. Valid roles are: ' + validRoles.join(', ') });
+        }
+
         // Get team settings if team_id is provided
         let teamSettings = null;
         if (team_id) {
-            const teamResult = await db.query('SELECT * FROM teams WHERE id = $1', [team_id]);
-            if (teamResult.rows.length > 0) {
-                teamSettings = teamResult.rows[0];
+            const teamResult = await db.query('SELECT id, name, primary_role, timezone, language_tone FROM teams WHERE id = $1', [team_id]);
+            if (teamResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Team not found' });
             }
+            teamSettings = teamResult.rows[0];
         }
         
         // Get ephemeris data for the requested date
@@ -761,8 +768,8 @@ function applyToneToAdvice(advice, tone) {
     } else if (tone === 'Casual') {
         return advice
             .replace(/suggests/gi, 'looks like')
-            .replace(/cosmic/gi, '')
-            .replace(/planetary/gi, '');
+            .replace(/cosmic\s+/gi, '')
+            .replace(/planetary\s+/gi, '');
     }
     return advice;
 }
