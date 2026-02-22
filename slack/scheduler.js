@@ -99,32 +99,6 @@ async function sendDailyHoroscope(app, config) {
     }
 }
 
-// Create the log table if it doesn't exist
-async function initializeSchedulerTables() {
-    try {
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS slack_daily_horoscope_log (
-                id SERIAL PRIMARY KEY,
-                workspace_id INTEGER NOT NULL REFERENCES slack_workspaces(id) ON DELETE CASCADE,
-                channel_id VARCHAR(255) NOT NULL,
-                sent_date DATE NOT NULL,
-                sent_at TIMESTAMP DEFAULT NOW(),
-                UNIQUE(workspace_id, channel_id, sent_date)
-            );
-        `);
-
-        await db.query(`
-            CREATE INDEX IF NOT EXISTS idx_slack_daily_horoscope_log_workspace
-            ON slack_daily_horoscope_log(workspace_id, sent_date);
-        `);
-
-        console.log('✅ Scheduler tables initialized');
-    } catch (error) {
-        console.error('Error initializing scheduler tables:', error);
-    }
-}
-
 module.exports = {
-    scheduleDailyHoroscopeMessages,
-    initializeSchedulerTables
+    scheduleDailyHoroscopeMessages
 };

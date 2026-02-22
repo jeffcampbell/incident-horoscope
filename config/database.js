@@ -202,6 +202,23 @@ async function initializeTables() {
             CREATE INDEX IF NOT EXISTS idx_incidents_slack_workspace_id ON incidents(slack_workspace_id);
         `);
 
+        // Create Slack daily horoscope log table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS slack_daily_horoscope_log (
+                id SERIAL PRIMARY KEY,
+                workspace_id INTEGER NOT NULL REFERENCES slack_workspaces(id) ON DELETE CASCADE,
+                channel_id VARCHAR(255) NOT NULL,
+                sent_date DATE NOT NULL,
+                sent_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(workspace_id, channel_id, sent_date)
+            );
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_slack_daily_horoscope_log_workspace
+            ON slack_daily_horoscope_log(workspace_id, sent_date);
+        `);
+
         console.log('✅ Database tables initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database tables:', error);

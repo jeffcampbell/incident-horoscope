@@ -1,13 +1,10 @@
 const { app, receiver } = require('./bot');
 const { registerHandlers } = require('./handlers');
-const { scheduleDailyHoroscopeMessages, initializeSchedulerTables } = require('./scheduler');
+const { scheduleDailyHoroscopeMessages } = require('./scheduler');
 
 // Initialize Slack integration
 async function initializeSlack() {
     try {
-        // Initialize scheduler tables
-        await initializeSchedulerTables();
-
         // Register command and interaction handlers
         registerHandlers(app);
 
