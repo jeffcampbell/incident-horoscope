@@ -7,9 +7,11 @@ const { generateHoroscope } = require('../routes/horoscope');
  * Fetch horoscope data for a given date
  * Retrieves ephemeris data from database or NASA API if needed, then generates horoscope
  * @param {string} date - Date in YYYY-MM-DD format
+ * @param {number} teamId - Optional team ID for team-specific settings
+ * @param {string} role - Optional role for role-specific predictions
  * @returns {Object|null} Horoscope data including date, ephemeris, and horoscope predictions
  */
-async function fetchHoroscopeData(date) {
+async function fetchHoroscopeData(date, teamId = null, role = null) {
     try {
         // Check if ephemeris data exists for the date
         let ephemerisResult = await db.query(
@@ -33,9 +35,18 @@ async function fetchHoroscopeData(date) {
             return null;
         }
 
+        // Get team settings if teamId is provided
+        let teamSettings = null;
+        if (teamId) {
+            const teamResult = await db.query('SELECT * FROM teams WHERE id = $1', [teamId]);
+            if (teamResult.rows.length > 0) {
+                teamSettings = teamResult.rows[0];
+            }
+        }
+
         // Generate horoscope directly using the horoscope module
         const ephemeris = ephemerisResult.rows[0];
-        const horoscope = await generateHoroscope(ephemeris, null);
+        const horoscope = await generateHoroscope(ephemeris, null, teamSettings, role);
 
         return {
             date,

@@ -6,10 +6,19 @@ const moment = require('moment');
 // Generate horoscope for a specific date based on planetary positions
 router.get('/', async (req, res) => {
     try {
-        const { date, birthday } = req.query;
-        
+        const { date, birthday, team_id, role } = req.query;
+
         if (!date) {
             return res.status(400).json({ error: 'Date parameter is required' });
+        }
+
+        // Get team settings if team_id is provided
+        let teamSettings = null;
+        if (team_id) {
+            const teamResult = await db.query('SELECT * FROM teams WHERE id = $1', [team_id]);
+            if (teamResult.rows.length > 0) {
+                teamSettings = teamResult.rows[0];
+            }
         }
         
         // Get ephemeris data for the requested date
@@ -74,11 +83,13 @@ router.get('/', async (req, res) => {
         }
         
         // Generate horoscope based on planetary positions
-        const horoscope = await generateHoroscope(ephemeris, birthChart);
-        
+        const horoscope = await generateHoroscope(ephemeris, birthChart, teamSettings, role);
+
         res.json({
             date,
             birthday,
+            team_id,
+            role,
             ephemeris,
             horoscope
         });
@@ -104,8 +115,14 @@ router.get('/influences', async (req, res) => {
     }
 });
 
-async function generateHoroscope(ephemeris, birthChart) {
+async function generateHoroscope(ephemeris, birthChart, teamSettings = null, role = null) {
     const predictions = [];
+
+    // Determine language tone
+    const languageTone = teamSettings?.language_tone || 'Cosmic';
+
+    // Role-specific focus areas
+    const roleFocus = getRoleFocus(role || teamSettings?.primary_role);
     
     // Mars - Incident Risk and System Conflicts
     const marsIntensity = Math.abs(ephemeris.mars_ra % 30);
@@ -370,10 +387,15 @@ async function generateHoroscope(ephemeris, birthChart) {
     return {
         date: ephemeris.date,
         overall_risk_level: calculateOverallRisk(predictions),
-        predictions,
-        cosmic_advice: generateCosmicAdvice(predictions),
+        predictions: applyLanguageTone(predictions, languageTone, roleFocus),
+        cosmic_advice: applyToneToAdvice(generateCosmicAdvice(predictions), languageTone),
         planetary_summary: generatePlanetarySummary(ephemeris),
-        developer_insights: developerInsights
+        developer_insights: developerInsights,
+        team_settings: teamSettings ? {
+            name: teamSettings.name,
+            role: role || teamSettings.primary_role,
+            language_tone: languageTone
+        } : null
     };
 }
 
@@ -671,6 +693,78 @@ function calculatePersonalMarsInfluence(birthChart) {
     return {
         stress_resilience: marsIntensity > 15 && marsIntensity < 25 ? 0.8 : 0.3
     };
+}
+
+// Helper function to get role-specific focus areas
+function getRoleFocus(role) {
+    const focuses = {
+        'Backend': ['deployment', 'infrastructure', 'incident_risk'],
+        'Frontend': ['communication_risk', 'team_harmony', 'testing_focus'],
+        'DevOps': ['deployment', 'infrastructure', 'system_stability'],
+        'QA': ['testing_focus', 'communication_flow'],
+        'Full-Stack': ['deployment', 'communication_risk', 'system_stability'],
+        'Leadership': ['team_harmony', 'leadership_opportunity', 'growth_opportunities']
+    };
+    return focuses[role] || [];
+}
+
+// Apply language tone to predictions
+function applyLanguageTone(predictions, tone, roleFocus) {
+    if (tone === 'Cosmic') {
+        return predictions; // Already in cosmic tone
+    }
+
+    return predictions.map(pred => {
+        let message = pred.message;
+
+        if (tone === 'Technical') {
+            // Convert to technical tone
+            message = message
+                .replace(/cosmic/gi, 'systemic')
+                .replace(/planetary/gi, 'operational')
+                .replace(/Mars/g, 'High-risk indicators')
+                .replace(/Mercury/g, 'Communication metrics')
+                .replace(/Venus/g, 'Team dynamics')
+                .replace(/Jupiter/g, 'Growth vectors')
+                .replace(/Saturn/g, 'Process constraints')
+                .replace(/Moon/g, 'Resource allocation')
+                .replace(/suggests/g, 'indicates')
+                .replace(/favors/g, 'optimizes for');
+        } else if (tone === 'Casual') {
+            // Convert to casual tone
+            message = message
+                .replace(/suggests heightened potential/gi, 'heads up - there might be')
+                .replace(/indicates/gi, 'looks like')
+                .replace(/favors/gi, 'is great for')
+                .replace(/Excellent day for/gi, 'Perfect time to')
+                .replace(/Good time for/gi, 'Not a bad time to')
+                .replace(/Review/gi, 'Double-check')
+                .replace(/Ensure/gi, 'Make sure');
+        }
+
+        // Boost relevance for role-specific categories
+        if (roleFocus.includes(pred.category)) {
+            pred.confidence = Math.min(1.0, pred.confidence * 1.2);
+        }
+
+        return { ...pred, message };
+    });
+}
+
+// Apply tone to cosmic advice
+function applyToneToAdvice(advice, tone) {
+    if (tone === 'Technical') {
+        return advice
+            .replace(/cosmic/gi, 'operational')
+            .replace(/planetary energies/gi, 'system metrics')
+            .replace(/alignment/gi, 'configuration');
+    } else if (tone === 'Casual') {
+        return advice
+            .replace(/suggests/gi, 'looks like')
+            .replace(/cosmic/gi, '')
+            .replace(/planetary/gi, '');
+    }
+    return advice;
 }
 
 module.exports = router;

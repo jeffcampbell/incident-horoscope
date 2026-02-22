@@ -219,6 +219,87 @@ async function initializeTables() {
             ON slack_daily_horoscope_log(workspace_id, sent_date);
         `);
 
+        // Create teams table for team configuration portal
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS teams (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                primary_role VARCHAR(50) CHECK (primary_role IN ('Backend', 'Frontend', 'DevOps', 'QA', 'Full-Stack', 'Leadership')),
+                timezone VARCHAR(50) DEFAULT 'America/New_York',
+                language_tone VARCHAR(50) DEFAULT 'Cosmic' CHECK (language_tone IN ('Cosmic', 'Technical', 'Casual')),
+                team_lead_email VARCHAR(255),
+                daily_horoscope_enabled BOOLEAN DEFAULT true,
+                delivery_time TIME DEFAULT '09:00:00',
+                delivery_channel VARCHAR(255),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+        `);
+
+        // Create team_members junction table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS team_members (
+                id SERIAL PRIMARY KEY,
+                team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255),
+                role VARCHAR(50),
+                slack_user_id VARCHAR(255),
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(team_id, email)
+            );
+        `);
+
+        // Create team_incident_categories for customization
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS team_incident_categories (
+                id SERIAL PRIMARY KEY,
+                team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+                category VARCHAR(50) NOT NULL,
+                enabled BOOLEAN DEFAULT true,
+                default_severity VARCHAR(20),
+                auto_escalate BOOLEAN DEFAULT false,
+                escalation_threshold_minutes INTEGER,
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(team_id, category)
+            );
+        `);
+
+        // Create indexes for teams tables
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_teams_timezone ON teams(timezone);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_team_members_email ON team_members(email);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_team_incident_categories_team_id ON team_incident_categories(team_id);
+        `);
+
+        // Add team_id to slack_workspaces if not exists
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='slack_workspaces' AND column_name='app_team_id'
+                ) THEN
+                    ALTER TABLE slack_workspaces ADD COLUMN app_team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL;
+                END IF;
+            END $$;
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_slack_workspaces_app_team_id ON slack_workspaces(app_team_id);
+        `);
+
         console.log('✅ Database tables initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database tables:', error);
