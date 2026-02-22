@@ -15,6 +15,13 @@ router.post('/', async (req, res) => {
             });
         }
 
+        // Validate date format
+        if (!moment(date, 'YYYY-MM-DD', true).isValid()) {
+            return res.status(400).json({
+                error: 'Invalid date format. Use YYYY-MM-DD'
+            });
+        }
+
         // Validate severity
         const validSeverities = ['low', 'medium', 'high', 'critical'];
         if (!validSeverities.includes(severity)) {
@@ -28,6 +35,13 @@ router.post('/', async (req, res) => {
         if (!validCategories.includes(category)) {
             return res.status(400).json({
                 error: `Invalid category. Must be one of: ${validCategories.join(', ')}`
+            });
+        }
+
+        // Validate duration_minutes if provided
+        if (duration_minutes !== undefined && (isNaN(duration_minutes) || duration_minutes < 0)) {
+            return res.status(400).json({
+                error: 'Invalid duration_minutes. Must be a non-negative integer'
             });
         }
 
@@ -45,178 +59,6 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Error creating incident:', error);
         res.status(500).json({ error: 'Failed to log incident' });
-    }
-});
-
-// GET /api/incidents?date=YYYY-MM-DD - Get incidents for a specific date
-router.get('/', async (req, res) => {
-    try {
-        const { date, team_id = 1 } = req.query;
-
-        if (!date) {
-            return res.status(400).json({ error: 'Date parameter is required' });
-        }
-
-        const result = await db.query(
-            `SELECT * FROM incidents
-             WHERE date = $1 AND team_id = $2
-             ORDER BY created_at DESC`,
-            [date, team_id]
-        );
-
-        res.json({
-            date,
-            incidents: result.rows
-        });
-    } catch (error) {
-        console.error('Error fetching incidents:', error);
-        res.status(500).json({ error: 'Failed to fetch incidents' });
-    }
-});
-
-// GET /api/incidents/date-range?start=YYYY-MM-DD&end=YYYY-MM-DD - Get incidents within date range
-router.get('/date-range', async (req, res) => {
-    try {
-        const { start, end, team_id = 1 } = req.query;
-
-        if (!start || !end) {
-            return res.status(400).json({ error: 'Start and end date parameters are required' });
-        }
-
-        const result = await db.query(
-            `SELECT * FROM incidents
-             WHERE date >= $1 AND date <= $2 AND team_id = $3
-             ORDER BY date DESC, created_at DESC`,
-            [start, end, team_id]
-        );
-
-        res.json({
-            start_date: start,
-            end_date: end,
-            incidents: result.rows
-        });
-    } catch (error) {
-        console.error('Error fetching incidents in date range:', error);
-        res.status(500).json({ error: 'Failed to fetch incidents' });
-    }
-});
-
-// GET /api/incidents/recent - Get recent incidents (last 30 days)
-router.get('/recent', async (req, res) => {
-    try {
-        const { limit = 10, team_id = 1 } = req.query;
-        const thirtyDaysAgo = moment().subtract(30, 'days').format('YYYY-MM-DD');
-
-        const result = await db.query(
-            `SELECT * FROM incidents
-             WHERE team_id = $1 AND date >= $2
-             ORDER BY date DESC, created_at DESC
-             LIMIT $3`,
-            [team_id, thirtyDaysAgo, limit]
-        );
-
-        res.json({
-            incidents: result.rows
-        });
-    } catch (error) {
-        console.error('Error fetching recent incidents:', error);
-        res.status(500).json({ error: 'Failed to fetch recent incidents' });
-    }
-});
-
-// GET /api/incidents/validation?date=YYYY-MM-DD - Compare incidents with predictions for a date
-router.get('/validation', async (req, res) => {
-    try {
-        const { date, team_id = 1 } = req.query;
-
-        if (!date) {
-            return res.status(400).json({ error: 'Date parameter is required' });
-        }
-
-        // Get incidents for the date
-        const incidentsResult = await db.query(
-            `SELECT * FROM incidents
-             WHERE date = $1 AND team_id = $2
-             ORDER BY severity DESC`,
-            [date, team_id]
-        );
-
-        const incidents = incidentsResult.rows;
-
-        // Get ephemeris data for the date to generate predictions
-        const ephemerisResult = await db.query(
-            'SELECT * FROM ephemeris_data WHERE date = $1',
-            [date]
-        );
-
-        let prediction = null;
-        let validationResult = 'no_data';
-        let accuracyScore = 0;
-        let match_color = 'gray';
-
-        if (ephemerisResult.rows.length > 0) {
-            const ephemeris = ephemerisResult.rows[0];
-
-            // Generate simple risk prediction based on Mars intensity (simplified from horoscope.js)
-            const marsIntensity = Math.abs(ephemeris.mars_ra % 30);
-            const mercuryPosition = ephemeris.mercury_ra % 360;
-
-            let predictedRisk = 'normal';
-            if (marsIntensity > 27) {
-                predictedRisk = 'high';
-            } else if (marsIntensity > 20) {
-                predictedRisk = 'medium';
-            } else if (mercuryPosition > 330 || mercuryPosition < 30) {
-                predictedRisk = 'medium';
-            }
-
-            prediction = {
-                risk_level: predictedRisk,
-                mars_intensity: marsIntensity,
-                mercury_position: mercuryPosition
-            };
-
-            // Calculate validation
-            const actualRisk = calculateActualRisk(incidents);
-
-            // Compare predicted vs actual
-            if (actualRisk === predictedRisk) {
-                validationResult = 'match';
-                accuracyScore = 100;
-                match_color = 'green';
-            } else if (
-                (predictedRisk === 'high' && actualRisk === 'medium') ||
-                (predictedRisk === 'medium' && actualRisk === 'high') ||
-                (predictedRisk === 'medium' && actualRisk === 'normal') ||
-                (predictedRisk === 'normal' && actualRisk === 'medium')
-            ) {
-                validationResult = 'partial_match';
-                accuracyScore = 50;
-                match_color = 'yellow';
-            } else {
-                validationResult = 'mismatch';
-                accuracyScore = 0;
-                match_color = 'red';
-            }
-        }
-
-        res.json({
-            date,
-            prediction,
-            actual: {
-                risk_level: calculateActualRisk(incidents),
-                incidents_count: incidents.length,
-                incidents: incidents
-            },
-            validation: {
-                result: validationResult,
-                accuracy_score: accuracyScore,
-                match_color: match_color
-            }
-        });
-    } catch (error) {
-        console.error('Error validating incidents:', error);
-        res.status(500).json({ error: 'Failed to validate incidents' });
     }
 });
 
@@ -334,11 +176,223 @@ router.get('/validation/range', async (req, res) => {
     }
 });
 
+// GET /api/incidents/validation?date=YYYY-MM-DD - Compare incidents with predictions for a date
+router.get('/validation', async (req, res) => {
+    try {
+        const { date, team_id = 1 } = req.query;
+
+        if (!date) {
+            return res.status(400).json({ error: 'Date parameter is required' });
+        }
+
+        // Get incidents for the date
+        const incidentsResult = await db.query(
+            `SELECT * FROM incidents
+             WHERE date = $1 AND team_id = $2
+             ORDER BY CASE severity
+                 WHEN 'critical' THEN 4
+                 WHEN 'high' THEN 3
+                 WHEN 'medium' THEN 2
+                 WHEN 'low' THEN 1
+             END DESC`,
+            [date, team_id]
+        );
+
+        const incidents = incidentsResult.rows;
+
+        // Get ephemeris data for the date to generate predictions
+        const ephemerisResult = await db.query(
+            'SELECT * FROM ephemeris_data WHERE date = $1',
+            [date]
+        );
+
+        let prediction = null;
+        let validationResult = 'no_data';
+        let accuracyScore = 0;
+        let match_color = 'gray';
+
+        if (ephemerisResult.rows.length > 0) {
+            const ephemeris = ephemerisResult.rows[0];
+
+            // Generate simple risk prediction based on Mars intensity (simplified from horoscope.js)
+            const marsIntensity = Math.abs(ephemeris.mars_ra % 30);
+            const mercuryPosition = ephemeris.mercury_ra % 360;
+
+            let predictedRisk = 'normal';
+            if (marsIntensity > 27) {
+                predictedRisk = 'high';
+            } else if (marsIntensity > 20) {
+                predictedRisk = 'medium';
+            } else if (mercuryPosition > 330 || mercuryPosition < 30) {
+                predictedRisk = 'medium';
+            }
+
+            prediction = {
+                risk_level: predictedRisk,
+                mars_intensity: marsIntensity,
+                mercury_position: mercuryPosition
+            };
+
+            // Calculate validation
+            const actualRisk = calculateActualRisk(incidents);
+
+            // Compare predicted vs actual
+            if (actualRisk === predictedRisk) {
+                validationResult = 'match';
+                accuracyScore = 100;
+                match_color = 'green';
+            } else if (
+                (predictedRisk === 'high' && actualRisk === 'medium') ||
+                (predictedRisk === 'medium' && actualRisk === 'high') ||
+                (predictedRisk === 'medium' && actualRisk === 'normal') ||
+                (predictedRisk === 'normal' && actualRisk === 'medium')
+            ) {
+                validationResult = 'partial_match';
+                accuracyScore = 50;
+                match_color = 'yellow';
+            } else {
+                validationResult = 'mismatch';
+                accuracyScore = 0;
+                match_color = 'red';
+            }
+        }
+
+        res.json({
+            date,
+            prediction,
+            actual: {
+                risk_level: calculateActualRisk(incidents),
+                incidents_count: incidents.length,
+                incidents: incidents
+            },
+            validation: {
+                result: validationResult,
+                accuracy_score: accuracyScore,
+                match_color: match_color
+            }
+        });
+    } catch (error) {
+        console.error('Error validating incidents:', error);
+        res.status(500).json({ error: 'Failed to validate incidents' });
+    }
+});
+
+// GET /api/incidents/date-range?start=YYYY-MM-DD&end=YYYY-MM-DD - Get incidents within date range
+router.get('/date-range', async (req, res) => {
+    try {
+        const { start, end, team_id = 1 } = req.query;
+
+        if (!start || !end) {
+            return res.status(400).json({ error: 'Start and end date parameters are required' });
+        }
+
+        const result = await db.query(
+            `SELECT * FROM incidents
+             WHERE date >= $1 AND date <= $2 AND team_id = $3
+             ORDER BY date DESC, created_at DESC`,
+            [start, end, team_id]
+        );
+
+        res.json({
+            start_date: start,
+            end_date: end,
+            incidents: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching incidents in date range:', error);
+        res.status(500).json({ error: 'Failed to fetch incidents' });
+    }
+});
+
+// GET /api/incidents/recent - Get recent incidents (last 30 days)
+router.get('/recent', async (req, res) => {
+    try {
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 1000);
+        const { team_id = 1 } = req.query;
+        const thirtyDaysAgo = moment().subtract(30, 'days').format('YYYY-MM-DD');
+
+        const result = await db.query(
+            `SELECT * FROM incidents
+             WHERE team_id = $1 AND date >= $2
+             ORDER BY date DESC, created_at DESC
+             LIMIT $3`,
+            [team_id, thirtyDaysAgo, limit]
+        );
+
+        res.json({
+            incidents: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching recent incidents:', error);
+        res.status(500).json({ error: 'Failed to fetch recent incidents' });
+    }
+});
+
+// GET /api/incidents?date=YYYY-MM-DD - Get incidents for a specific date
+router.get('/', async (req, res) => {
+    try {
+        const { date, team_id = 1 } = req.query;
+
+        if (!date) {
+            return res.status(400).json({ error: 'Date parameter is required' });
+        }
+
+        const result = await db.query(
+            `SELECT * FROM incidents
+             WHERE date = $1 AND team_id = $2
+             ORDER BY created_at DESC`,
+            [date, team_id]
+        );
+
+        res.json({
+            date,
+            incidents: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching incidents:', error);
+        res.status(500).json({ error: 'Failed to fetch incidents' });
+    }
+});
+
 // PUT /api/incidents/:id - Update incident
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { date, severity, category, duration_minutes, description } = req.body;
+
+        // Validate date format if provided
+        if (date !== undefined && !moment(date, 'YYYY-MM-DD', true).isValid()) {
+            return res.status(400).json({
+                error: 'Invalid date format. Use YYYY-MM-DD'
+            });
+        }
+
+        // Validate severity if provided
+        if (severity !== undefined) {
+            const validSeverities = ['low', 'medium', 'high', 'critical'];
+            if (!validSeverities.includes(severity)) {
+                return res.status(400).json({
+                    error: `Invalid severity. Must be one of: ${validSeverities.join(', ')}`
+                });
+            }
+        }
+
+        // Validate category if provided
+        if (category !== undefined) {
+            const validCategories = ['deployment', 'infrastructure', 'communication', 'monitoring', 'other'];
+            if (!validCategories.includes(category)) {
+                return res.status(400).json({
+                    error: `Invalid category. Must be one of: ${validCategories.join(', ')}`
+                });
+            }
+        }
+
+        // Validate duration_minutes if provided
+        if (duration_minutes !== undefined && (isNaN(duration_minutes) || duration_minutes < 0)) {
+            return res.status(400).json({
+                error: 'Invalid duration_minutes. Must be a non-negative integer'
+            });
+        }
 
         // Build update query dynamically based on provided fields
         const updates = [];
