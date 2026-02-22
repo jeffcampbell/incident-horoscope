@@ -837,45 +837,193 @@
             .header h1 {
                 font-size: 2rem;
             }
-            
+
             .container {
                 padding: 15px;
             }
-            
+
             .horoscope-controls {
                 padding: 15px;
                 gap: 15px;
             }
-            
+
             button {
                 padding: 10px 8px;
                 font-size: 0.85rem;
                 text-align: center;
             }
-            
+
             .planetary-positions {
                 grid-template-columns: repeat(2, 1fr);
                 grid-template-rows: auto;
                 gap: 8px;
                 max-width: 400px;
             }
-            
+
             .planet-card {
                 min-height: 75px;
                 padding: 8px;
             }
-            
+
             .planet-name {
                 font-size: 0.9rem;
             }
-            
+
             .planet-sign {
                 font-size: 0.75rem;
             }
-            
+
             .planet-influence {
                 font-size: 0.65rem;
             }
+        }
+
+        /* Incident Logging Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close:hover {
+            color: #ffd700;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .incident-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid;
+        }
+
+        .incident-item.critical { border-left-color: #dc143c; }
+        .incident-item.high { border-left-color: #ff4757; }
+        .incident-item.medium { border-left-color: #ffa502; }
+        .incident-item.low { border-left-color: #2ed573; }
+
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .incident-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .incident-actions button {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .validation-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .validation-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 15px 0;
+            align-items: center;
+        }
+
+        .validation-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .validation-box.green { border: 2px solid #2ed573; }
+        .validation-box.yellow { border: 2px solid #ffa502; }
+        .validation-box.red { border: 2px solid #ff4757; }
+        .validation-box.gray { border: 2px solid #95a5a6; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffd700;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
     </style>
 </head>
@@ -932,6 +1080,112 @@
             </div>
         </div>
         
+        <!-- Incident Logging & Validation Section -->
+        <div class="card">
+            <h3>📊 Incident Logging & Validation</h3>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('incidents')">📝 Log Incidents</div>
+                <div class="tab" onclick="switchTab('validation')">✅ Validation</div>
+            </div>
+
+            <!-- Incidents Tab -->
+            <div id="incidentsTab" class="tab-content active">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button onclick="openIncidentModal()">➕ Log New Incident</button>
+                </div>
+
+                <h4>Recent Incidents (Last 30 Days)</h4>
+                <div id="recentIncidents">
+                    <div class="loading">Loading recent incidents...</div>
+                </div>
+            </div>
+
+            <!-- Validation Tab -->
+            <div id="validationTab" class="tab-content">
+                <div style="margin-bottom: 20px;">
+                    <div class="control-group">
+                        <label>Validate Date:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="date" id="validationDate" value="">
+                            <button onclick="validateDate()">Check Accuracy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="validationResults">
+                    <p style="text-align: center; opacity: 0.7;">Select a date to see how predictions matched actual incidents</p>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h4>Date Range Validation</h4>
+                    <div class="control-group">
+                        <label>Date Range:</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="date" id="validationStart" value="">
+                            <input type="date" id="validationEnd" value="">
+                            <button onclick="validateRange()">Analyze Range</button>
+                        </div>
+                    </div>
+                    <div id="rangeValidationResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Logging Modal -->
+        <div id="incidentModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeIncidentModal()">&times;</span>
+                <h3 style="margin-bottom: 20px;">📝 Log Incident</h3>
+
+                <form id="incidentForm" onsubmit="submitIncident(event)">
+                    <div class="form-group">
+                        <label>Date *</label>
+                        <input type="date" id="incidentDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Severity *</label>
+                        <select id="incidentSeverity" required>
+                            <option value="">Select severity</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select id="incidentCategory" required>
+                            <option value="">Select category</option>
+                            <option value="deployment">Deployment</option>
+                            <option value="infrastructure">Infrastructure</option>
+                            <option value="communication">Communication</option>
+                            <option value="monitoring">Monitoring</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" id="incidentDuration" min="0" placeholder="Optional">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="incidentDescription" required placeholder="Describe what happened..."></textarea>
+                    </div>
+
+                    <div style="text-align: right;">
+                        <button type="button" onclick="closeIncidentModal()" style="background: rgba(255,255,255,0.2); margin-right: 10px;">Cancel</button>
+                        <button type="submit">Log Incident</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Planetary Knowledge Base -->
         <div class="card">
             <h3>🌟 Guide to Planetary Influences</h3>
@@ -1319,11 +1573,317 @@
         let orrery = null;
         let currentOrrery = null;
         
+        // Incident Management Functions
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            if (tabName === 'incidents') {
+                document.getElementById('incidentsTab').classList.add('active');
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                loadRecentIncidents();
+            } else if (tabName === 'validation') {
+                document.getElementById('validationTab').classList.add('active');
+                document.querySelectorAll('.tab')[1].classList.add('active');
+            }
+        }
+
+        function openIncidentModal() {
+            const modal = document.getElementById('incidentModal');
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('incidentDate').value = today;
+            modal.style.display = 'block';
+        }
+
+        function closeIncidentModal() {
+            const modal = document.getElementById('incidentModal');
+            modal.style.display = 'none';
+            document.getElementById('incidentForm').reset();
+        }
+
+        async function submitIncident(event) {
+            event.preventDefault();
+
+            const incident = {
+                date: document.getElementById('incidentDate').value,
+                severity: document.getElementById('incidentSeverity').value,
+                category: document.getElementById('incidentCategory').value,
+                duration_minutes: document.getElementById('incidentDuration').value || null,
+                description: document.getElementById('incidentDescription').value
+            };
+
+            try {
+                const response = await fetch('/api/incidents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(incident)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Incident logged successfully!');
+                    closeIncidentModal();
+                    loadRecentIncidents();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to log incident'));
+                }
+            } catch (error) {
+                console.error('Error submitting incident:', error);
+                alert('Failed to log incident. Please try again.');
+            }
+        }
+
+        async function loadRecentIncidents() {
+            const container = document.getElementById('recentIncidents');
+            container.innerHTML = '<div class="loading">Loading recent incidents...</div>';
+
+            try {
+                const response = await fetch('/api/incidents/recent?limit=10');
+                const data = await response.json();
+
+                if (data.incidents.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; opacity: 0.7;">No incidents logged in the last 30 days</p>';
+                    return;
+                }
+
+                container.innerHTML = data.incidents.map(incident => {
+                    const date = new Date(incident.date).toLocaleDateString();
+                    const severityEmoji = {
+                        critical: '🔴',
+                        high: '🟠',
+                        medium: '🟡',
+                        low: '🟢'
+                    };
+
+                    return `
+                        <div class="incident-item ${incident.severity}">
+                            <div class="incident-header">
+                                <div>
+                                    <strong>${severityEmoji[incident.severity]} ${incident.severity.toUpperCase()}</strong>
+                                    <span style="opacity: 0.8; margin-left: 10px;">${date}</span>
+                                </div>
+                                <div class="incident-actions">
+                                    <button onclick="deleteIncident(${incident.id})">🗑️ Delete</button>
+                                </div>
+                            </div>
+                            <div>
+                                <strong>Category:</strong> ${incident.category}
+                                ${incident.duration_minutes ? `<br><strong>Duration:</strong> ${incident.duration_minutes} minutes` : ''}
+                            </div>
+                            <div style="margin-top: 8px;">${incident.description}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading incidents:', error);
+                container.innerHTML = '<div class="error">Failed to load incidents</div>';
+            }
+        }
+
+        async function deleteIncident(id) {
+            if (!confirm('Are you sure you want to delete this incident?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/incidents/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Incident deleted successfully');
+                    loadRecentIncidents();
+                } else {
+                    alert('Failed to delete incident');
+                }
+            } catch (error) {
+                console.error('Error deleting incident:', error);
+                alert('Failed to delete incident');
+            }
+        }
+
+        async function validateDate() {
+            const date = document.getElementById('validationDate').value;
+            if (!date) {
+                alert('Please select a date to validate');
+                return;
+            }
+
+            const container = document.getElementById('validationResults');
+            container.innerHTML = '<div class="loading">Analyzing prediction accuracy...</div>';
+
+            try {
+                const response = await fetch(`/api/incidents/validation?date=${date}`);
+                const data = await response.json();
+
+                const riskEmoji = {
+                    high: '🔴',
+                    medium: '🟡',
+                    normal: '🟢',
+                    favorable: '✨'
+                };
+
+                let html = `
+                    <div class="validation-card">
+                        <h4 style="text-align: center; margin-bottom: 20px;">
+                            Validation for ${new Date(date).toLocaleDateString()}
+                        </h4>
+                `;
+
+                if (data.prediction) {
+                    html += `
+                        <div class="validation-row">
+                            <div class="validation-box">
+                                <h5>Predicted Risk</h5>
+                                <div style="font-size: 2rem; margin: 10px 0;">
+                                    ${riskEmoji[data.prediction.risk_level]}
+                                </div>
+                                <div>${data.prediction.risk_level.toUpperCase()}</div>
+                            </div>
+
+                            <div class="validation-box">
+                                <h5>Actual Risk</h5>
+                                <div style="font-size: 2rem; margin: 10px 0;">
+                                    ${riskEmoji[data.actual.risk_level]}
+                                </div>
+                                <div>${data.actual.risk_level.toUpperCase()}</div>
+                                <small>${data.actual.incidents_count} incident(s)</small>
+                            </div>
+
+                            <div class="validation-box ${data.validation.match_color}">
+                                <h5>Accuracy</h5>
+                                <div style="font-size: 2rem; margin: 10px 0;">
+                                    ${data.validation.accuracy_score}%
+                                </div>
+                                <div>${data.validation.result.replace(/_/g, ' ').toUpperCase()}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    if (data.actual.incidents.length > 0) {
+                        html += `
+                            <div style="margin-top: 20px;">
+                                <h5>Incidents on this date:</h5>
+                                ${data.actual.incidents.map(inc => `
+                                    <div class="incident-item ${inc.severity}" style="margin-top: 10px;">
+                                        <strong>${inc.severity.toUpperCase()}</strong> - ${inc.category}<br>
+                                        ${inc.description}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div style="text-align: center; margin-top: 20px; opacity: 0.8;">
+                                No incidents logged on this date
+                            </div>
+                        `;
+                    }
+                } else {
+                    html += '<p style="text-align: center;">No prediction data available for this date</p>';
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error validating date:', error);
+                container.innerHTML = '<div class="error">Failed to validate date</div>';
+            }
+        }
+
+        async function validateRange() {
+            const start = document.getElementById('validationStart').value;
+            const end = document.getElementById('validationEnd').value;
+
+            if (!start || !end) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
+            const container = document.getElementById('rangeValidationResults');
+            container.innerHTML = '<div class="loading">Analyzing prediction accuracy for date range...</div>';
+
+            try {
+                const response = await fetch(`/api/incidents/validation/range?start=${start}&end=${end}`);
+                const data = await response.json();
+
+                let html = `
+                    <div class="validation-card">
+                        <h4 style="text-align: center; margin-bottom: 20px;">
+                            Validation Results: ${new Date(start).toLocaleDateString()} - ${new Date(end).toLocaleDateString()}
+                        </h4>
+
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <div class="stat-number">${data.summary.total_days}</div>
+                                <div>Days Analyzed</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number" style="color: #2ed573;">${data.summary.matches}</div>
+                                <div>Exact Matches</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number" style="color: #ffa502;">${data.summary.partial_matches}</div>
+                                <div>Partial Matches</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number" style="color: #ff4757;">${data.summary.mismatches}</div>
+                                <div>Mismatches</div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center; margin: 20px 0;">
+                            <h3 style="color: #ffd700;">Overall Accuracy: ${data.summary.overall_accuracy}%</h3>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <h5>Daily Breakdown:</h5>
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                ${data.validations.map(v => {
+                                    const matchColor = v.match_type === 'match' ? 'green' :
+                                                      v.match_type === 'partial_match' ? 'yellow' : 'red';
+                                    return `
+                                        <div class="validation-box ${matchColor}" style="margin: 5px 0; padding: 10px;">
+                                            <strong>${new Date(v.date).toLocaleDateString()}</strong>:
+                                            Predicted ${v.predicted_risk} | Actual ${v.actual_risk}
+                                            (${v.incidents_count} incidents)
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error validating range:', error);
+                container.innerHTML = '<div class="error">Failed to validate date range</div>';
+            }
+        }
+
         // Initialize dashboard on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Set today's date for horoscope
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('horoscopeDate').value = today;
+            document.getElementById('validationDate').value = today;
+
+            // Set date range for last 7 days
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            document.getElementById('validationStart').value = sevenDaysAgo.toISOString().split('T')[0];
+            document.getElementById('validationEnd').value = today;
+
+            // Load recent incidents
+            loadRecentIncidents();
             
             // Initialize orreries only if canvas elements exist
             const orreryCanvas = document.getElementById('orreryCanvas');
