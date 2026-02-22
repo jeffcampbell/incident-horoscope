@@ -674,3 +674,4 @@ function calculatePersonalMarsInfluence(birthChart) {
 }
 
 module.exports = router;
+module.exports.generateHoroscope = generateHoroscope;
