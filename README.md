@@ -13,6 +13,13 @@ A fun and entertaining horoscope generator that uses real NASA astronomical data
   - On-call management guidance
   - Testing and code review focus areas
   - Leadership opportunities
+- **Slack Integration**: Full Slack bot integration with:
+  - Daily horoscope messages posted to configured channels
+  - `/horoscope` slash command for instant predictions
+  - `/log-incident` to create incident reports from Slack
+  - `/schedule` to register on-call engineers
+  - Interactive buttons to expand deployment and on-call forecasts
+  - Team data isolation for multi-workspace deployments
 
 ## 🚀 Production Deployment
 
@@ -88,6 +95,28 @@ The application combines real astronomical data with entertaining "cosmic correl
 - `POST /api/ephemeris/bulk` - Fetch ephemeris data for multiple dates
 - `GET /api/horoscope?date=YYYY-MM-DD` - Generate horoscope for a specific date
 - `GET /api/horoscope/influences` - Get planetary influence knowledge base
+- `GET /api/incidents` - Get incidents for a specific date
+- `POST /api/incidents` - Log a new incident
+- `GET /api/incidents/validation` - Validate incidents against predictions
+- `POST /slack/*` - Slack integration endpoints (OAuth, events, interactions)
+
+## 🤖 Slack Integration
+
+To enable Slack integration:
+
+1. Create a Slack app at [api.slack.com/apps](https://api.slack.com/apps)
+2. Configure OAuth scopes: `chat:write`, `commands`, `app_mentions:read`
+3. Add slash commands: `/horoscope`, `/log-incident`, `/schedule`
+4. Set up environment variables in `.env`:
+   ```
+   SLACK_SIGNING_SECRET=your_signing_secret
+   SLACK_CLIENT_ID=your_client_id
+   SLACK_CLIENT_SECRET=your_client_secret
+   SLACK_STATE_SECRET=random_string
+   ```
+5. Install the app to your workspace
+
+See [slack/README.md](slack/README.md) for detailed setup instructions.
 
 ## 🎭 Disclaimer
 

@@ -65,19 +65,30 @@ router.post('/', async (req, res) => {
 // GET /api/incidents/validation/range?start=YYYY-MM-DD&end=YYYY-MM-DD - Validation metrics for date range
 router.get('/validation/range', async (req, res) => {
     try {
-        const { start, end, team_id = 1 } = req.query;
+        const { start, end, team_id, slack_workspace_id } = req.query;
 
         if (!start || !end) {
             return res.status(400).json({ error: 'Start and end date parameters are required' });
+        }
+
+        // Build WHERE clause based on available filters
+        // Prioritize slack_workspace_id for Slack-originated requests, fall back to team_id for API requests
+        let whereClause, queryParams;
+        if (slack_workspace_id) {
+            whereClause = 'WHERE date >= $1 AND date <= $2 AND slack_workspace_id = $3';
+            queryParams = [start, end, parseInt(slack_workspace_id)];
+        } else {
+            whereClause = 'WHERE date >= $1 AND date <= $2 AND team_id = $3';
+            queryParams = [start, end, parseInt(team_id) || 1];
         }
 
         // Get all incidents in range
         const incidentsResult = await db.query(
             `SELECT date, severity, category, duration_minutes
              FROM incidents
-             WHERE date >= $1 AND date <= $2 AND team_id = $3
+             ${whereClause}
              ORDER BY date`,
-            [start, end, team_id]
+            queryParams
         );
 
         // Get ephemeris data for all dates in range
@@ -179,23 +190,33 @@ router.get('/validation/range', async (req, res) => {
 // GET /api/incidents/validation?date=YYYY-MM-DD - Compare incidents with predictions for a date
 router.get('/validation', async (req, res) => {
     try {
-        const { date, team_id = 1 } = req.query;
+        const { date, team_id, slack_workspace_id } = req.query;
 
         if (!date) {
             return res.status(400).json({ error: 'Date parameter is required' });
         }
 
+        // Build WHERE clause based on available filters
+        let whereClause, queryParams;
+        if (slack_workspace_id) {
+            whereClause = 'WHERE date = $1 AND slack_workspace_id = $2';
+            queryParams = [date, parseInt(slack_workspace_id)];
+        } else {
+            whereClause = 'WHERE date = $1 AND team_id = $2';
+            queryParams = [date, parseInt(team_id) || 1];
+        }
+
         // Get incidents for the date
         const incidentsResult = await db.query(
             `SELECT * FROM incidents
-             WHERE date = $1 AND team_id = $2
+             ${whereClause}
              ORDER BY CASE severity
                  WHEN 'critical' THEN 4
                  WHEN 'high' THEN 3
                  WHEN 'medium' THEN 2
                  WHEN 'low' THEN 1
              END DESC`,
-            [date, team_id]
+            queryParams
         );
 
         const incidents = incidentsResult.rows;
@@ -280,17 +301,27 @@ router.get('/validation', async (req, res) => {
 // GET /api/incidents/date-range?start=YYYY-MM-DD&end=YYYY-MM-DD - Get incidents within date range
 router.get('/date-range', async (req, res) => {
     try {
-        const { start, end, team_id = 1 } = req.query;
+        const { start, end, team_id, slack_workspace_id } = req.query;
 
         if (!start || !end) {
             return res.status(400).json({ error: 'Start and end date parameters are required' });
         }
 
+        // Build WHERE clause based on available filters
+        let whereClause, queryParams;
+        if (slack_workspace_id) {
+            whereClause = 'WHERE date >= $1 AND date <= $2 AND slack_workspace_id = $3';
+            queryParams = [start, end, parseInt(slack_workspace_id)];
+        } else {
+            whereClause = 'WHERE date >= $1 AND date <= $2 AND team_id = $3';
+            queryParams = [start, end, parseInt(team_id) || 1];
+        }
+
         const result = await db.query(
             `SELECT * FROM incidents
-             WHERE date >= $1 AND date <= $2 AND team_id = $3
+             ${whereClause}
              ORDER BY date DESC, created_at DESC`,
-            [start, end, team_id]
+            queryParams
         );
 
         res.json({
@@ -308,15 +339,25 @@ router.get('/date-range', async (req, res) => {
 router.get('/recent', async (req, res) => {
     try {
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 1000);
-        const { team_id = 1 } = req.query;
+        const { team_id, slack_workspace_id } = req.query;
         const thirtyDaysAgo = moment().subtract(30, 'days').format('YYYY-MM-DD');
+
+        // Build WHERE clause based on available filters
+        let whereClause, queryParams;
+        if (slack_workspace_id) {
+            whereClause = 'WHERE slack_workspace_id = $1 AND date >= $2';
+            queryParams = [parseInt(slack_workspace_id), thirtyDaysAgo, limit];
+        } else {
+            whereClause = 'WHERE team_id = $1 AND date >= $2';
+            queryParams = [parseInt(team_id) || 1, thirtyDaysAgo, limit];
+        }
 
         const result = await db.query(
             `SELECT * FROM incidents
-             WHERE team_id = $1 AND date >= $2
+             ${whereClause}
              ORDER BY date DESC, created_at DESC
              LIMIT $3`,
-            [team_id, thirtyDaysAgo, limit]
+            queryParams
         );
 
         res.json({
@@ -331,17 +372,27 @@ router.get('/recent', async (req, res) => {
 // GET /api/incidents?date=YYYY-MM-DD - Get incidents for a specific date
 router.get('/', async (req, res) => {
     try {
-        const { date, team_id = 1 } = req.query;
+        const { date, team_id, slack_workspace_id } = req.query;
 
         if (!date) {
             return res.status(400).json({ error: 'Date parameter is required' });
         }
 
+        // Build WHERE clause based on available filters
+        let whereClause, queryParams;
+        if (slack_workspace_id) {
+            whereClause = 'WHERE date = $1 AND slack_workspace_id = $2';
+            queryParams = [date, parseInt(slack_workspace_id)];
+        } else {
+            whereClause = 'WHERE date = $1 AND team_id = $2';
+            queryParams = [date, parseInt(team_id) || 1];
+        }
+
         const result = await db.query(
             `SELECT * FROM incidents
-             WHERE date = $1 AND team_id = $2
+             ${whereClause}
              ORDER BY created_at DESC`,
-            [date, team_id]
+            queryParams
         );
 
         res.json({
