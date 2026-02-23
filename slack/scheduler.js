@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const moment = require('moment-timezone');
 const db = require('../config/database');
 const { fetchHoroscopeData, getAccuracyStats, formatHoroscopeMessage } = require('./commands');
+const { checkAndSendHighRiskAlerts } = require('./high-risk-alerts');
 
 // Schedule daily horoscope messages for all configured channels
 function scheduleDailyHoroscopeMessages(app) {
@@ -116,6 +117,23 @@ async function sendDailyHoroscope(app, config) {
     }
 }
 
+// Schedule daily high-risk alert checks
+function scheduleHighRiskAlertChecks(app) {
+    // Run daily at 8 AM UTC (adjusts for each team's timezone in the alert logic)
+    cron.schedule('0 8 * * *', async () => {
+        try {
+            console.log('🔔 Running daily high-risk alert check...');
+            const summary = await checkAndSendHighRiskAlerts(app);
+            console.log(`📊 High-risk alert summary: ${summary.alertsSent} alerts sent, ${summary.errors} errors`);
+        } catch (error) {
+            console.error('Error in high-risk alert scheduler:', error);
+        }
+    });
+
+    console.log('✅ High-risk alert scheduler initialized (runs daily at 8 AM UTC)');
+}
+
 module.exports = {
-    scheduleDailyHoroscopeMessages
+    scheduleDailyHoroscopeMessages,
+    scheduleHighRiskAlertChecks
 };

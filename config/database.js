@@ -237,6 +237,50 @@ async function initializeTables() {
             );
         `);
 
+        // Add Slack alert columns to teams table if they don't exist
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='teams' AND column_name='slack_alert_enabled'
+                ) THEN
+                    ALTER TABLE teams ADD COLUMN slack_alert_enabled BOOLEAN DEFAULT true;
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='teams' AND column_name='slack_alert_channel'
+                ) THEN
+                    ALTER TABLE teams ADD COLUMN slack_alert_channel VARCHAR(255) DEFAULT '#horoscope-alerts';
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='teams' AND column_name='alert_sensitivity'
+                ) THEN
+                    ALTER TABLE teams ADD COLUMN alert_sensitivity VARCHAR(20) DEFAULT 'medium' CHECK (alert_sensitivity IN ('low', 'medium', 'high'));
+                END IF;
+            END $$;
+        `);
+
+        // Create Slack high-risk alerts log table (must be after teams table)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS slack_high_risk_alerts_log (
+                id SERIAL PRIMARY KEY,
+                team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+                alert_date DATE NOT NULL,
+                high_risk_dates TEXT NOT NULL,
+                sent_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(team_id, alert_date)
+            );
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_slack_high_risk_alerts_log_team
+            ON slack_high_risk_alerts_log(team_id, alert_date);
+        `);
+
         // Create team_members junction table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS team_members (
@@ -298,6 +342,35 @@ async function initializeTables() {
 
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_slack_workspaces_app_team_id ON slack_workspaces(app_team_id);
+        `);
+
+        // Create deployments table for deployment planning
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS deployments (
+                id SERIAL PRIMARY KEY,
+                team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+                service_name VARCHAR(255) NOT NULL,
+                description TEXT,
+                planned_date DATE NOT NULL,
+                actual_date DATE,
+                status VARCHAR(50) DEFAULT 'planned' CHECK (status IN ('planned', 'scheduled', 'completed', 'cancelled')),
+                outcome VARCHAR(50) CHECK (outcome IN ('success', 'failure', 'partial')),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+        `);
+
+        // Create indexes for deployments table
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_deployments_team_id ON deployments(team_id);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_deployments_planned_date ON deployments(planned_date);
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_deployments_status ON deployments(status);
         `);
 
         console.log('✅ Database tables initialized successfully');

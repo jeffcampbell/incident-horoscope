@@ -47,6 +47,8 @@ app.use('/api/ephemeris', require('./routes/ephemeris'));
 app.use('/api/horoscope', require('./routes/horoscope'));
 app.use('/api/incidents', require('./routes/incidents'));
 app.use('/api/teams', require('./routes/teams'));
+app.use('/api/deployments', require('./routes/deployments'));
+app.use('/api/slack', require('./routes/slack-alerts'));
 
 // Slack integration routes (if configured)
 if (slackIntegration) {
@@ -84,6 +86,11 @@ app.get('/team/dashboard/:id', (req, res) => {
 
 app.get('/team/list', (req, res) => {
     res.render('team-list');
+});
+
+// Deployment planner
+app.get('/deployment-planner', (req, res) => {
+    res.render('deployment-planner');
 });
 
 // Health check

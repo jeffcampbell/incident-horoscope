@@ -81,6 +81,9 @@ router.post('/', async (req, res) => {
             daily_horoscope_enabled,
             delivery_time,
             delivery_channel,
+            slack_alert_enabled,
+            slack_alert_channel,
+            alert_sensitivity,
             members,
             incident_categories
         } = req.body;
@@ -93,8 +96,9 @@ router.post('/', async (req, res) => {
         const teamResult = await db.query(
             `INSERT INTO teams (
                 name, description, primary_role, timezone, language_tone,
-                team_lead_email, daily_horoscope_enabled, delivery_time, delivery_channel
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                team_lead_email, daily_horoscope_enabled, delivery_time, delivery_channel,
+                slack_alert_enabled, slack_alert_channel, alert_sensitivity
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *`,
             [
                 name,
@@ -105,7 +109,10 @@ router.post('/', async (req, res) => {
                 team_lead_email || null,
                 daily_horoscope_enabled !== false,
                 delivery_time || '09:00:00',
-                delivery_channel || null
+                delivery_channel || null,
+                slack_alert_enabled !== false,
+                slack_alert_channel || '#horoscope-alerts',
+                alert_sensitivity || 'medium'
             ]
         );
 
@@ -173,7 +180,10 @@ router.put('/:id', async (req, res) => {
             team_lead_email,
             daily_horoscope_enabled,
             delivery_time,
-            delivery_channel
+            delivery_channel,
+            slack_alert_enabled,
+            slack_alert_channel,
+            alert_sensitivity
         } = req.body;
 
         const result = await db.query(
@@ -187,11 +197,15 @@ router.put('/:id', async (req, res) => {
                 daily_horoscope_enabled = COALESCE($7, daily_horoscope_enabled),
                 delivery_time = COALESCE($8, delivery_time),
                 delivery_channel = COALESCE($9, delivery_channel),
+                slack_alert_enabled = COALESCE($10, slack_alert_enabled),
+                slack_alert_channel = COALESCE($11, slack_alert_channel),
+                alert_sensitivity = COALESCE($12, alert_sensitivity),
                 updated_at = NOW()
-            WHERE id = $10
+            WHERE id = $13
             RETURNING *`,
             [name, description, primary_role, timezone, language_tone, team_lead_email,
-             daily_horoscope_enabled, delivery_time, delivery_channel, id]
+             daily_horoscope_enabled, delivery_time, delivery_channel,
+             slack_alert_enabled, slack_alert_channel, alert_sensitivity, id]
         );
 
         if (result.rows.length === 0) {

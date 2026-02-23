@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Deployment Planner - Incident Horoscope</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .form-group select option {
+            background: #2a5298;
+            color: white;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #ffd700;
+            color: #1e3c72;
+        }
+
+        .btn-primary:hover {
+            background: #ffed4e;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .calendar-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h2 {
+            color: #ffd700;
+            font-size: 1.8rem;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+        }
+
+        .calendar-day {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 150px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .calendar-day.risk-high {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .calendar-day.risk-medium {
+            border-color: #feca57;
+            background: rgba(254, 202, 87, 0.2);
+        }
+
+        .calendar-day.risk-normal {
+            border-color: #48dbfb;
+            background: rgba(72, 219, 251, 0.2);
+        }
+
+        .calendar-day.risk-favorable {
+            border-color: #1dd1a1;
+            background: rgba(29, 209, 161, 0.2);
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .day-date {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .risk-badge {
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .risk-badge.high {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .risk-badge.medium {
+            background: #feca57;
+            color: #1e3c72;
+        }
+
+        .risk-badge.normal {
+            background: #48dbfb;
+            color: #1e3c72;
+        }
+
+        .risk-badge.favorable {
+            background: #1dd1a1;
+            color: white;
+        }
+
+        .risk-badge.unknown {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .deployment-badge {
+            display: inline-block;
+            background: rgba(255, 215, 0, 0.3);
+            border: 1px solid #ffd700;
+            border-radius: 5px;
+            padding: 5px 8px;
+            font-size: 0.75rem;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .deployment-badge:hover {
+            background: rgba(255, 215, 0, 0.5);
+        }
+
+        .risk-factors {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .risk-factors div {
+            margin-top: 3px;
+        }
+
+        .deployments-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .deployments-section h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .deployment-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffd700;
+        }
+
+        .deployment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .deployment-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .deployment-date {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .deployment-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .deployment-actions button {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .deployment-risk-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .risk-recommendation {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 215, 0, 0.2);
+            border-left: 3px solid #ffd700;
+            border-radius: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #2a5298;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: #ffd700;
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-form .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-form label {
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .modal-form input,
+        .modal-form textarea,
+        .modal-form select {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .modal-form textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: rgba(255, 107, 107, 0.3);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-decoration: none;
+            font-size: 1.1rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/team/list" class="back-link">← Back to Teams</a>
+
+        <div class="header">
+            <h1>🚀 Deployment Planner</h1>
+            <p>Plan your deployments around cosmic risk forecasts</p>
+        </div>
+
+        <div id="error-container"></div>
+
+        <div class="controls">
+            <div class="controls-grid">
+                <div class="form-group">
+                    <label for="team-select">Select Team</label>
+                    <select id="team-select">
+                        <option value="">Loading teams...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="days-select">Outlook Period</label>
+                    <select id="days-select">
+                        <option value="7">7 days</option>
+                        <option value="14" selected>14 days</option>
+                        <option value="21">21 days</option>
+                        <option value="30">30 days</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-success" id="add-deployment-btn">+ Add Deployment</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">Loading deployment outlook...</div>
+
+        <div id="calendar-container" class="calendar-container" style="display: none;">
+            <div class="calendar-header">
+                <h2>14-Day Risk Outlook</h2>
+            </div>
+            <div id="calendar-grid" class="calendar-grid">
+                <!-- Calendar days will be inserted here -->
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #1dd1a1;"></div>
+                    <span>Favorable</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #48dbfb;"></div>
+                    <span>Normal</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #feca57;"></div>
+                    <span>Medium Risk</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>High Risk</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="deployments-container" class="deployments-section" style="display: none;">
+            <h2>Upcoming Deployments</h2>
+            <div id="deployments-list">
+                <!-- Deployments will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Deployment Modal -->
+    <div id="deployment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Deployment</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="deployment-form" class="modal-form" onsubmit="return false;">
+                <input type="hidden" id="deployment-id">
+                <div class="form-group">
+                    <label for="service-name">Service/Project Name *</label>
+                    <input type="text" id="service-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="planned-date">Planned Date *</label>
+                    <input type="date" id="planned-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status">
+                        <option value="planned">Planned</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-group" id="outcome-group" style="display: none;">
+                    <label for="outcome">Outcome</label>
+                    <select id="outcome">
+                        <option value="">Not completed yet</option>
+                        <option value="success">Success</option>
+                        <option value="failure">Failure</option>
+                        <option value="partial">Partial Success</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Save Deployment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/deployment-planner.js"></script>
+</body>
+</html>
