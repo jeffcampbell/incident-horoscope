@@ -66,8 +66,29 @@ function requireAuth(req, res, next) {
  * Usage:
  *   router.get('/team/:team_id/data', requireAuth, requireTeamAccess, (req, res) => { ... });
  *
- * Current implementation: Verifies team exists in database
- * TODO: When user/session management is added, verify user belongs to team
+ * ⚠️ SECURITY WARNING: INCOMPLETE TEAM ISOLATION
+ *
+ * Current implementation ONLY verifies that the team exists in the database.
+ * It does NOT verify that the authenticated API key or user has permission
+ * to access the requested team.
+ *
+ * SECURITY IMPLICATIONS:
+ * - Any valid API key can access data from ANY team
+ * - No team-level access control is enforced
+ * - Team data isolation is NOT maintained
+ *
+ * This middleware should be used with caution and is NOT suitable for
+ * production environments requiring strict team isolation.
+ *
+ * RECOMMENDED ALTERNATIVES until proper authorization is implemented:
+ * - Use separate API keys per team
+ * - Implement team-based API key mapping in database
+ * - Add user/session management with team membership verification
+ *
+ * TODO: Implement proper team-based authorization:
+ *   1. Add API key to team membership mapping in database
+ *   2. Verify authenticated API key has access to requested team
+ *   3. Implement role-based permissions for different actions
  */
 async function requireTeamAccess(req, res, next) {
     const { team_id } = req.params;
@@ -91,10 +112,8 @@ async function requireTeamAccess(req, res, next) {
             });
         }
 
-        // Team exists - allow access for now
-        // TODO: When user/session management is implemented, verify:
-        //   1. User belongs to this team
-        //   2. User has appropriate role/permissions for the requested action
+        // ⚠️ SECURITY GAP: This only checks team existence, not access permissions
+        // Any authenticated API key can access this team's data
         next();
     } catch (error) {
         console.error('Error verifying team access:', error);

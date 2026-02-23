@@ -411,14 +411,14 @@ async function sendHighRiskAlert(app, team, highRiskDays) {
         });
 
         // Log the alert
-        const highRiskDatesStr = highRiskDays.map(d => d.date).join(',');
+        const highRiskDatesArray = highRiskDays.map(d => d.date);
         await db.query(
             `INSERT INTO slack_high_risk_alerts_log (team_id, alert_date, high_risk_dates)
-             VALUES ($1, CURRENT_DATE, $2)
+             VALUES ($1, CURRENT_DATE, $2::jsonb)
              ON CONFLICT (team_id, alert_date) DO UPDATE SET
                 high_risk_dates = EXCLUDED.high_risk_dates,
                 sent_at = NOW()`,
-            [team.id, highRiskDatesStr]
+            [team.id, JSON.stringify(highRiskDatesArray)]
         );
 
         console.log(`✅ Sent high-risk alert to ${team.name} (${alertChannel}): ${highRiskDays.length} days`);

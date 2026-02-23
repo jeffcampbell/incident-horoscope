@@ -270,7 +270,7 @@ async function initializeTables() {
                 id SERIAL PRIMARY KEY,
                 team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
                 alert_date DATE NOT NULL,
-                high_risk_dates TEXT NOT NULL,
+                high_risk_dates JSONB NOT NULL,
                 sent_at TIMESTAMP DEFAULT NOW(),
                 UNIQUE(team_id, alert_date)
             );
