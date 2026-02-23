@@ -3,18 +3,26 @@ const router = express.Router();
 const db = require('../config/database');
 const { app } = require('../slack/bot');
 const { calculate7DayRiskForecast, sendHighRiskAlert, checkAndSendHighRiskAlerts } = require('../slack/high-risk-alerts');
+const { requireAuth, requireTeamAccess } = require('../middleware/auth');
 
 /**
  * POST /api/slack/alert-high-risk-days
  * Manually trigger high-risk alert check and send alerts to teams
  * Can optionally specify a specific team_id, otherwise checks all teams
+ *
+ * Authentication: Requires API key (X-API-Key header or Authorization: Bearer <key>)
  */
-router.post('/alert-high-risk-days', async (req, res) => {
+router.post('/alert-high-risk-days', requireAuth, async (req, res) => {
     try {
         const { team_id, force } = req.body;
 
         // If team_id specified, only alert that team
         if (team_id) {
+            // Validate team_id is a valid integer
+            if (isNaN(parseInt(team_id))) {
+                return res.status(400).json({ error: 'Invalid team_id parameter' });
+            }
+
             // Get team settings
             const teamResult = await db.query(
                 'SELECT * FROM teams WHERE id = $1',
@@ -111,10 +119,17 @@ router.post('/alert-high-risk-days', async (req, res) => {
 /**
  * GET /api/slack/alert-high-risk-days/preview/:team_id
  * Preview what high-risk days would be alerted for a team without sending
+ *
+ * Authentication: Requires API key + team access authorization
  */
-router.get('/alert-high-risk-days/preview/:team_id', async (req, res) => {
+router.get('/alert-high-risk-days/preview/:team_id', requireAuth, requireTeamAccess, async (req, res) => {
     try {
         const { team_id } = req.params;
+
+        // Validate team_id is a valid integer
+        if (!team_id || isNaN(parseInt(team_id))) {
+            return res.status(400).json({ error: 'Invalid team_id parameter' });
+        }
 
         // Get team settings
         const teamResult = await db.query(
@@ -152,11 +167,20 @@ router.get('/alert-high-risk-days/preview/:team_id', async (req, res) => {
 /**
  * GET /api/slack/alert-high-risk-days/history/:team_id
  * Get alert history for a team
+ *
+ * Authentication: Requires API key + team access authorization
  */
-router.get('/alert-high-risk-days/history/:team_id', async (req, res) => {
+router.get('/alert-high-risk-days/history/:team_id', requireAuth, requireTeamAccess, async (req, res) => {
     try {
         const { team_id } = req.params;
-        const { limit = 30 } = req.query;
+
+        // Validate team_id is a valid integer
+        if (!team_id || isNaN(parseInt(team_id))) {
+            return res.status(400).json({ error: 'Invalid team_id parameter' });
+        }
+
+        // Validate and clamp limit parameter (min: 1, max: 100, default: 30)
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 30, 1), 100);
 
         // Get team
         const teamResult = await db.query(
