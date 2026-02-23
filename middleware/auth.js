@@ -27,11 +27,12 @@ function requireAuth(req, res, next) {
     const configuredApiKey = process.env.API_KEY;
 
     if (!configuredApiKey) {
-        // No API key configured - log warning but allow in production
-        // This maintains backward compatibility but should be addressed
-        console.warn('⚠️  WARNING: No API_KEY configured. API endpoints are unprotected.');
-        console.warn('   Set API_KEY environment variable to secure your endpoints.');
-        return next();
+        // In production, API_KEY must be configured
+        console.error('❌ CRITICAL: No API_KEY configured in production environment');
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'API authentication is not properly configured'
+        });
     }
 
     // Extract API key from request headers
@@ -65,13 +66,10 @@ function requireAuth(req, res, next) {
  * Usage:
  *   router.get('/team/:team_id/data', requireAuth, requireTeamAccess, (req, res) => { ... });
  *
- * TODO: Implement proper team-based authorization when user/session management is added
- * Currently this is a placeholder that allows all authenticated requests
+ * Current implementation: Verifies team exists in database
+ * TODO: When user/session management is added, verify user belongs to team
  */
-function requireTeamAccess(req, res, next) {
-    // TODO: Implement team-based authorization
-    // For now, if authenticated, allow access to any team
-    // Future: Check user's team membership, role-based permissions, etc.
+async function requireTeamAccess(req, res, next) {
     const { team_id } = req.params;
 
     if (!team_id) {
@@ -81,9 +79,30 @@ function requireTeamAccess(req, res, next) {
         });
     }
 
-    // Placeholder - allow all authenticated requests
-    // TODO: Query database to verify user has access to this team
-    next();
+    try {
+        // Verify team exists in database
+        const db = require('../config/database');
+        const result = await db.query('SELECT id FROM teams WHERE id = $1', [team_id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Team not found'
+            });
+        }
+
+        // Team exists - allow access for now
+        // TODO: When user/session management is implemented, verify:
+        //   1. User belongs to this team
+        //   2. User has appropriate role/permissions for the requested action
+        next();
+    } catch (error) {
+        console.error('Error verifying team access:', error);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to verify team access'
+        });
+    }
 }
 
 module.exports = {

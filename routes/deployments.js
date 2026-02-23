@@ -3,9 +3,10 @@ const router = express.Router();
 const db = require('../config/database');
 const moment = require('moment-timezone');
 const { generateHoroscope } = require('./horoscope');
+const { requireAuth, requireTeamAccess } = require('../middleware/auth');
 
 // Get deployments for a team within a date range
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
         const { team_id, start_date, end_date, status } = req.query;
 
@@ -51,7 +52,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get deployment risk outlook for next N days
-router.get('/outlook', async (req, res) => {
+router.get('/outlook', requireAuth, async (req, res) => {
     try {
         const { team_id, days = 14 } = req.query;
 
@@ -158,7 +159,7 @@ router.get('/outlook', async (req, res) => {
 });
 
 // Get single deployment by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -204,7 +205,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new deployment
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { team_id, service_name, description, planned_date, status } = req.body;
 
@@ -252,7 +253,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update deployment
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const { service_name, description, planned_date, actual_date, status, outcome } = req.body;
@@ -313,7 +314,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete deployment
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -331,7 +332,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Get deployment analytics for a team
-router.get('/analytics/:team_id', async (req, res) => {
+router.get('/analytics/:team_id', requireAuth, requireTeamAccess, async (req, res) => {
     try {
         const { team_id } = req.params;
         const { days = 30 } = req.query;
