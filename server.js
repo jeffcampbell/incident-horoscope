@@ -47,6 +47,7 @@ app.use('/api/ephemeris', require('./routes/ephemeris'));
 app.use('/api/horoscope', require('./routes/horoscope'));
 app.use('/api/incidents', require('./routes/incidents'));
 app.use('/api/teams', require('./routes/teams'));
+app.use('/api/slack', require('./routes/slack-alerts'));
 
 // Slack integration routes (if configured)
 if (slackIntegration) {

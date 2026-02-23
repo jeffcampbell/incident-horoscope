@@ -219,6 +219,23 @@ async function initializeTables() {
             ON slack_daily_horoscope_log(workspace_id, sent_date);
         `);
 
+        // Create Slack high-risk alerts log table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS slack_high_risk_alerts_log (
+                id SERIAL PRIMARY KEY,
+                team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+                alert_date DATE NOT NULL,
+                high_risk_dates TEXT NOT NULL,
+                sent_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(team_id, alert_date)
+            );
+        `);
+
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_slack_high_risk_alerts_log_team
+            ON slack_high_risk_alerts_log(team_id, alert_date);
+        `);
+
         // Create teams table for team configuration portal
         await pool.query(`
             CREATE TABLE IF NOT EXISTS teams (
@@ -235,6 +252,33 @@ async function initializeTables() {
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
             );
+        `);
+
+        // Add Slack alert columns to teams table if they don't exist
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='teams' AND column_name='slack_alert_enabled'
+                ) THEN
+                    ALTER TABLE teams ADD COLUMN slack_alert_enabled BOOLEAN DEFAULT true;
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='teams' AND column_name='slack_alert_channel'
+                ) THEN
+                    ALTER TABLE teams ADD COLUMN slack_alert_channel VARCHAR(255) DEFAULT '#horoscope-alerts';
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='teams' AND column_name='alert_sensitivity'
+                ) THEN
+                    ALTER TABLE teams ADD COLUMN alert_sensitivity VARCHAR(20) DEFAULT 'medium' CHECK (alert_sensitivity IN ('low', 'medium', 'high'));
+                END IF;
+            END $$;
         `);
 
         // Create team_members junction table
